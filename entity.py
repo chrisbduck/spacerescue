@@ -10,6 +10,8 @@
 
 import pygame
 
+_screen = None
+
 #-------------------------------------------------------------------------------
 class EntityManager(object):
 	def __init__(self):
@@ -33,11 +35,9 @@ class Entity(object):
 	_images = {}
 	
 	def __init__(self, pos, image, name):
-		if image in Entity._images:
-			self._image = Entity._images[image]
-		else:
-			self._image = pygame.image.load(image + '.png')
-			Entity._images[image] = self._image
+		if image not in Entity._images:
+			Entity._images[image] = pygame.image.load(image + '.png')
+		self._image = Entity._images[image]
 		self._rect = self._image.get_rect()
 		self._rect.move_ip(pos)
 		self._fpos = [float(pos[0]), float(pos[1])]		# float pos for precision movement
@@ -57,18 +57,31 @@ class Entity(object):
 #-------------------------------------------------------------------------------
 class PlayerEntity(Entity):
 	_instance = None
-	def __init__(self, pos):
+	def __init__(self):
 		assert(PlayerEntity._instance is None)
 		PlayerEntity._instance = self
-		super(PlayerEntity, self).__init__(pos, 'placeholders/bob', 'player')
+		super(PlayerEntity, self).__init__((0, 0), 'placeholders/big-bob', 'player')
 		self._accel_multiplier = 10.0
 		
 	def accelerate(self, amount):
 		self._fvel[0] += amount[0] * self._accel_multiplier
 		self._fvel[1] += amount[1] * self._accel_multiplier
+		
+	def reset(self):
+		global _screen_rect
+		self._fpos[0] = (_screen_rect.width - self._rect.width) / 2.0
+		self._fpos[1] = (_screen_rect.height - self._rect.height) / 2.0
+		self._fvel[:] = [0.0, 0.0]
+		
+#-------------------------------------------------------------------------------
+def init(screen, screen_rect):
+	global _screen, _screen_rect
+	_screen = screen
+	_screen_rect = screen_rect
+	player.reset()
 
 #-------------------------------------------------------------------------------
 
 mgr = EntityManager()
 
-player = PlayerEntity((50, 50))
+player = PlayerEntity()

@@ -31,27 +31,35 @@ class App(object):
 	
 	CENTRE = -1			# constant for text centring
 	
+	UP_LEFT =		(-1, -1)
+	UP = 			( 0, -1)
+	UP_RIGHT =		( 1, -1)
+	LEFT =			(-1,  0)
+	RIGHT =			( 1,  0)
+	DOWN_LEFT =		(-1,  1)
+	DOWN =			( 0,  1)
+	DOWN_RIGHT =	( 1,  1)
 	ACCEL_DIRS = {
-		pygame.K_RIGHT:	( 1,  0),
-		pygame.K_LEFT:	(-1,  0),
-		pygame.K_UP:	( 0, -1),
-		pygame.K_DOWN:	( 0,  1),
-		pygame.K_KP7:	(-1, -1),
-		pygame.K_KP8:	( 0, -1),
-		pygame.K_KP9:	( 1, -1),
-		pygame.K_KP4:	(-1,  0),
-		pygame.K_KP6:	( 1,  0),
-		pygame.K_KP1:	(-1,  1),
-		pygame.K_KP2:	( 0,  1),
-		pygame.K_KP3:	( 1,  1),
-		pygame.K_w:		(-1, -1),
-		pygame.K_e:		( 0, -1),
-		pygame.K_r:		( 1, -1),
-		pygame.K_s:		(-1,  0),
-		pygame.K_f:		( 1,  0),
-		pygame.K_x:		(-1,  1),
-		pygame.K_c:		( 0,  1),
-		pygame.K_v:		( 1,  1)
+		pygame.K_RIGHT:			RIGHT,
+		pygame.K_LEFT:			LEFT,
+		pygame.K_UP:			UP,
+		pygame.K_DOWN:			DOWN,
+		pygame.K_KP7:			UP_LEFT,
+		pygame.K_KP8:			UP,
+		pygame.K_KP9:			UP_RIGHT,
+		pygame.K_KP4:			LEFT,
+		pygame.K_KP6:			RIGHT,
+		pygame.K_KP1:			DOWN_LEFT,
+		pygame.K_KP2:			DOWN,
+		pygame.K_KP3:			DOWN_RIGHT,
+		pygame.K_w:				UP_LEFT,
+		pygame.K_e:				UP,
+		pygame.K_r:				UP_RIGHT,
+		pygame.K_s:				LEFT,
+		pygame.K_f:				RIGHT,
+		pygame.K_x:				DOWN_LEFT,
+		pygame.K_c:				DOWN,
+		pygame.K_v:				DOWN_RIGHT,
 	}
 	
 	#-------------------------------------------------------------------------------
@@ -63,6 +71,7 @@ class App(object):
 		self._paused = False
 		self._font = pygame.font.Font(pygame.font.get_default_font(), 16)
 		self._keys_down = set()
+		entity.init(self._screen, self._screen_rect)
 		
 	#-------------------------------------------------------------------------------
 	def run(self):
@@ -97,6 +106,8 @@ class App(object):
 					return False
 				elif event.key == pygame.K_SPACE:
 					self._paused = not self._paused
+				elif event.key == pygame.K_HASH:
+					entity.player.reset()
 			elif event.type == pygame.KEYUP:
 				if event.key in App.ACCEL_DIRS:
 					# This key should be in the keys down set, but there might be a key event error`
