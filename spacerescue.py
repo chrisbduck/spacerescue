@@ -53,14 +53,18 @@ class App(object):
 		pygame.K_v:		( 1,  1)
 	}
 	
+	#-------------------------------------------------------------------------------
 	def __init__(self):
 		self._screen_rect = pygame.Rect(0, 0, 640, 480)
-		self._screen = pygame.display.set_mode(self._screen_rect.size)
-		self._clock = pygame.time.Clock()
+		self._screen = pygame.display.set_mode(self._screen_rect.size,
+												pygame.DOUBLEBUF | pygame.HWSURFACE)
+		self._next_frame_tick = pygame.time.get_ticks()
+		self._ticks_per_update = 1000.0 / MAX_FPS
 		self._paused = False
 		self._font = pygame.font.Font(pygame.font.get_default_font(), 16)
 		self._keys_down = set()
 		
+	#-------------------------------------------------------------------------------
 	def run(self):
 		while True:
 			if not self.updateEvents():
@@ -70,10 +74,15 @@ class App(object):
 				entity.mgr.update()
 			self.render()
 		
+	#-------------------------------------------------------------------------------
 	def updateEvents(self):
 		"Returns False iff exited."
-		self._clock.tick(MAX_FPS)
+		# Wait for next frame time
+		while pygame.time.get_ticks() < self._next_frame_tick:
+			pygame.time.wait(1)		# non-busy wait
+		self._next_frame_tick += self._ticks_per_update
 		
+		# Check events
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				return False
@@ -92,6 +101,7 @@ class App(object):
 		
 		return True
 		
+	#-------------------------------------------------------------------------------
 	def processPlayerInput(self):
 		# Sum all of the keys held down and normalise the result to get an acceleration direction
 		if not self._keys_down:
@@ -111,12 +121,14 @@ class App(object):
 		length *= MAX_FPS		# effectively divide by FPS
 		entity.player.accelerate((x_sum / length, y_sum / length))
 		
+	#-------------------------------------------------------------------------------
 	def render(self):
 		self._screen.fill(BG_COLOUR)
 		entity.mgr.render(self._screen)
 		self.renderAllText()
 		pygame.display.flip()
 		
+	#-------------------------------------------------------------------------------
 	def renderAllText(self):
 		self.renderText("Paused" if self._paused else "Running",
 						pos=(App.CENTRE, 5), col=(220, 220, 220))
@@ -124,6 +136,7 @@ class App(object):
 						(entity.player._rect.left, entity.player._rect.top),
 						pos=(App.CENTRE, 25), col=(128, 128, 128))
 		
+	#-------------------------------------------------------------------------------
 	def renderText(self, text, pos, col):
 		text_surface = self._font.render(text, True, col)
 		rect = text_surface.get_rect()
@@ -136,9 +149,6 @@ class App(object):
 		else:
 			rect.top += pos[1]
 		self._screen.blit(text_surface, rect)
-
-#-------------------------------------------------------------------------------
-
 
 #-------------------------------------------------------------------------------
 
