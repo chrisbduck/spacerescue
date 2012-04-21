@@ -13,6 +13,7 @@ import os
 import pygame
 import random
 import sys
+import time
 
 BG_COLOUR = (0, 0, 0)
 MAX_FPS = 60
@@ -58,8 +59,7 @@ class App(object):
 		self._screen_rect = pygame.Rect(0, 0, 640, 480)
 		self._screen = pygame.display.set_mode(self._screen_rect.size,
 												pygame.DOUBLEBUF | pygame.HWSURFACE)
-		self._next_frame_tick = pygame.time.get_ticks()
-		self._ticks_per_update = 1000.0 / MAX_FPS
+		self._next_frame_tick = 0
 		self._paused = False
 		self._font = pygame.font.Font(pygame.font.get_default_font(), 16)
 		self._keys_down = set()
@@ -78,9 +78,13 @@ class App(object):
 	def updateEvents(self):
 		"Returns False iff exited."
 		# Wait for next frame time
-		while pygame.time.get_ticks() < self._next_frame_tick:
-			pygame.time.wait(1)		# non-busy wait
-		self._next_frame_tick += self._ticks_per_update
+		if self._next_frame_tick <= 0:
+			self._next_frame_tick = time.time()
+		else:
+			time_to_next_frame_sec = self._next_frame_tick - time.time()
+			if time_to_next_frame_sec > 0:
+				time.sleep(time_to_next_frame_sec)
+		self._next_frame_tick += 1.0 / MAX_FPS
 		
 		# Check events
 		for event in pygame.event.get():
