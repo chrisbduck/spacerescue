@@ -1,0 +1,33 @@
+Ludum Dare Brainstorming
+------------------------
+
+Theme: Tiny World (reckon I can use the plural though)
+
+Ideas:
+
+- Gravity space shooter thing with lots of asteroid-y mini planets
+	- Objective could be to rescue people from them
+	- Destroy the asteroids? or prevent destruction?
+	- Power ups:
+		- Short term shield
+		- Double shots
+		- Missiles with bigger explosions
+		- Speed (accel power)
+		- Armour
+	- Hit points / armour / shields
+		- Depleted by collision with anything above a set speed
+	- Enemies
+		- Gun placements
+		- Slow hovering shooting ships
+		- Kamikaze ships
+		- Power up lasers
+	- Non-stop gameplay
+	- Hide the internals of the asteroids until approaching them
+		- Later asteroids can have gun placements around the sides
+	- Limited time per asteroid until the enemies launch reinforcements
+	  to chase the player
+	- I *like* this idea :)
+
+- Platformer: lots of small levels
+	- Space Quest-y sort of small stations to run through and do
+	  something or other: maybe blow them up?
