@@ -36,21 +36,39 @@ class Entity(object):
 		if image in Entity._images:
 			self._image = Entity._images[image]
 		else:
-			self._image = pygame.image.load('placeholders/%s.png' % image)
+			self._image = pygame.image.load(image + '.png')
 			Entity._images[image] = self._image
 		self._rect = self._image.get_rect()
 		self._rect.move_ip(pos)
+		self._fpos = [float(pos[0]), float(pos[1])]		# float pos for precision movement
+		self._fvel = [0.0, 0.0]
 		self._alive = True
-		entities.add(self)
+		mgr.add(self)
 		
 	def update(self):
-		pass
+		self._fpos[0] += self._fvel[0]
+		self._fpos[1] += self._fvel[1]
+		self._rect.left = int(self._fpos[0])
+		self._rect.top = int(self._fpos[1])
 	
 	def render(self, screen):
 		screen.blit(self._image, self._rect)
 	
 #-------------------------------------------------------------------------------
+class PlayerEntity(Entity):
+	_instance = None
+	def __init__(self, pos):
+		assert(PlayerEntity._instance is None)
+		PlayerEntity._instance = self
+		super(PlayerEntity, self).__init__(pos, 'placeholders/bob', 'player')
+		self._accel_multiplier = 10.0
+		
+	def accelerate(self, amount):
+		self._fvel[0] += amount[0] * self._accel_multiplier
+		self._fvel[1] += amount[1] * self._accel_multiplier
 
-entities = EntityManager()
+#-------------------------------------------------------------------------------
 
-Entity((50, 50), 'bob', 'player')
+mgr = EntityManager()
+
+player = PlayerEntity((50, 50))
