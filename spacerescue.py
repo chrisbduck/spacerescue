@@ -64,14 +64,14 @@ class App(object):
 	
 	#-------------------------------------------------------------------------------
 	def __init__(self):
-		self._screen_rect = pygame.Rect(0, 0, 640, 480)
+		self._screen_rect = pygame.Rect(0, 0, 800, 600)
 		self._screen = pygame.display.set_mode(self._screen_rect.size,
 												pygame.DOUBLEBUF | pygame.HWSURFACE)
 		self._next_frame_tick = 0
 		self._paused = False
 		self._font = pygame.font.Font(pygame.font.get_default_font(), 16)
 		self._keys_down = set()
-		entity.init(self._screen, self._screen_rect)
+		entity.init(self._screen, self._screen_rect, self.renderText)
 		
 	#-------------------------------------------------------------------------------
 	def run(self):
