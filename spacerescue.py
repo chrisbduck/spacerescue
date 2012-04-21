@@ -5,7 +5,7 @@
 # Feel free to do what you like with this code, application, and data...
 # except sell it :)
 # 
-# - Chris Bevan 21-22 April, 2012
+# - Chris Bevan, 21-22 April, 2012
 #-------------------------------------------------------------------------------
 
 import os
@@ -20,8 +20,9 @@ MAX_FPS = 60
 
 # Override buffer size to 2k for better responsiveness on sounds
 pygame.mixer.pre_init(22050, -16, 2, 2048)
-
 pygame.init()
+
+from entity import entities
 
 #-------------------------------------------------------------------------------
 class App(object):
@@ -37,14 +38,13 @@ class App(object):
 		
 	def run(self):
 		while True:
-			if not self.update():
+			if not self.updateEvents():
 				break
 			if not self._paused:
-				# Do updates here
-				pass
+				entities.update()
 			self.render()
 		
-	def update(self):
+	def updateEvents(self):
 		"Returns False iff exited."
 		self._clock.tick(MAX_FPS)
 		
@@ -61,6 +61,7 @@ class App(object):
 		
 	def render(self):
 		self._screen.fill(BG_COLOUR)
+		entities.render(self._screen)
 		self.renderAllText()
 		pygame.display.flip()
 		
