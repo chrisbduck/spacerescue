@@ -47,33 +47,44 @@ class EntityManager(object):
 	def generate(self):
 		global asteroid
 		asteroid = AsteroidEntity((500, 300))
-		self._generateTurrets()
+		self._generatePlacements()
 		global player
 		player = PlayerEntity(PLAYER_INITIAL_POS)
 		
 	#-------------------------------------------------------------------------------
-	def _generateTurretAngles(self):
+	def _generatePlacementAngles(self, count, place_around_entrance=True, avoid_angles=None):
 		# Start with two around the entrance
-		turret_angles = [170, 191]
-		while len(turret_angles) < NUM_TURRETS:
+		if place_around_entrance:
+			result_angles = [ENTRANCE_MIN_ANGLE_DEG, ENTRANCE_MAX_ANGLE_DEG]
+		else:
+			result_angles = []
+		while len(result_angles) < count:
 			new_angle = random.randint(0, 359)
+			# Don't put near the entrance
+			if new_angle >= ENTRANCE_MIN_ANGLE_DEG and new_angle <= ENTRANCE_MAX_ANGLE_DEG:
+				continue
 			# Don't put them too close to another
-			if not any([abs(new_angle - angle) < 15 for angle in turret_angles]):
-				turret_angles.append(new_angle)
-		return turret_angles
+			if not any([abs(new_angle - angle) < 12 for angle in result_angles]):
+				if avoid_angles is None or \
+						not any([abs(new_angle - angle) < 3 for angle in avoid_angles]):
+					result_angles.append(new_angle)
+		return result_angles
 		
 	#-------------------------------------------------------------------------------
-	def _generateTurrets(self):
-		# Start with two around the entrance
-		turret_angles = [170, 191]
-		while len(turret_angles) < NUM_TURRETS:
-			new_angle = random.randint(0, 359)
-			# Don't put them too close to another
-			if not any([abs(new_angle - angle) < 15 for angle in turret_angles]):
-				turret_angles.append(new_angle)
+	def _generatePlacements(self):
+		"Generates placed entities: turrets and spacemen."
+		# Determine placements
+		outside_turret_angles = self._generatePlacementAngles(NUM_TURRETS,
+															  place_around_entrance=True)
+		inside_turret_angles = self._generatePlacementAngles(NUM_TURRETS,
+															 place_around_entrance=True)
+		spaceman_angles = self._generatePlacementAngles(NUM_SPACEMEN, place_around_entrance=False,
+														avoid_angles=inside_turret_angles)
 		
-		for outside in (True, False):
-			[TurretEntity(asteroid, angle, outside) for angle in self._generateTurretAngles()]
+		# Construct
+		[TurretEntity(asteroid, angle, outside=True) for angle in outside_turret_angles]
+		[TurretEntity(asteroid, angle, outside=False) for angle in inside_turret_angles]
+		[SpacemanEntity(asteroid, angle) for angle in spaceman_angles]
 
 	#-------------------------------------------------------------------------------
 	def update(self):
@@ -279,6 +290,7 @@ class AsteroidEntity(Entity):
 		super(AsteroidEntity, self).__init__(pos, 'data/asteroid', name)
 		self._hollow_image = Entity.getImage('data/asteroid-hollow')
 		self._hollow_opacity = 0.0
+		self._is_hollow = False
 		
 	#-------------------------------------------------------------------------------
 	def getInnerRadius(self):
@@ -297,14 +309,18 @@ class AsteroidEntity(Entity):
 		dist_outside_radius = dist_ctr_to_player - self.getRadius()
 		if dist_outside_radius <= 0:
 			self._hollow_opacity = 1.0
-		elif dist_outside_radius > 100:
-			self._hollow_opacity = 0.0
+			self._is_hollow = True
 		else:
-			self._hollow_opacity = 1.0 - dist_outside_radius / 100.0
+			self._is_hollow = False
+			if dist_outside_radius > 100:
+				self._hollow_opacity = 0.0
+			else:
+				self._hollow_opacity = 1.0 - dist_outside_radius / 100.0
 		
 	#-------------------------------------------------------------------------------
 	def render(self, screen):
-		screen.blit(self._image, self._rect)
+		if self._hollow_opacity < 1.0:
+			screen.blit(self._image, self._rect)
 		if self._hollow_opacity > 0.0:
 			self._hollow_image.set_alpha(self._hollow_opacity * 255)
 			screen.blit(self._hollow_image, self._rect)
@@ -364,7 +380,7 @@ class TurretEntity(Entity):
 	def update(self):
 		super(TurretEntity, self).update()
 		# Don't update the inside turrets unless the asteroid is in its hollow state
-		if not self._outside and asteroid._hollow_opacity < 1:
+		if not self._outside and not asteroid._is_hollow:
 			return
 		# Wind down the shooting timer if needed
 		if self._shot_cooldown > 0:
@@ -397,7 +413,7 @@ class TurretEntity(Entity):
 		
 	def render(self, screen):
 		# Don't render the inside turrets unless the asteroid is in its hollow state
-		if not self._outside and asteroid._hollow_opacity < 1:
+		if not self._outside and not asteroid._is_hollow:
 			return
 		super(TurretEntity, self).render(screen)
 
@@ -444,6 +460,33 @@ class BulletEntity(Entity):
 		start_pos = (self._rect.left, self._rect.bottom if self._bl_to_tr else self._rect.top)
 		end_pos = (self._rect.right, self._rect.top if self._bl_to_tr else self._rect.bottom)
 		pygame.draw.line(screen, col, start_pos, end_pos)
+
+#-------------------------------------------------------------------------------
+class SpacemanEntity(Entity):
+	_count = 0
+	
+	#-------------------------------------------------------------------------------
+	def __init__(self, asteroid, angle_deg):
+		SpacemanEntity._count += 1
+		angle_rad = angle_deg * DEG_TO_RAD
+		point_dir = (math.cos(angle_rad), -math.sin(angle_rad))
+		radius = asteroid.getInnerRadius()
+		radius -= 10	# fudge factor again
+		pos = list(asteroid.getCentre())
+		pos[0] += radius * point_dir[0]
+		pos[1] += radius * point_dir[1]
+		super(SpacemanEntity, self).__init__(pos, 'data/spaceman',
+			'spaceman%d' % SpacemanEntity._count)
+		
+		# Match the turret orientation to its angle from the asteroid centre
+		self._angle_deg = angle_deg - 90	# base image is straight up, so rotate 90 degrees CW
+		self._angle_deg += 180				# put on the inside of the asteroid
+		self.vulnerable = True
+		
+	def render(self, screen):
+		if not asteroid._is_hollow:
+			return
+		super(SpacemanEntity, self).render(screen)
 
 #-------------------------------------------------------------------------------
 class PlayerEntity(Entity):
