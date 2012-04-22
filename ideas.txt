@@ -31,3 +31,17 @@ Ideas:
 - Platformer: lots of small levels
 	- Space Quest-y sort of small stations to run through and do
 	  something or other: maybe blow them up?
+
+
+Sounds needed
+-------------
+
+- Player shoot - Player_Shoot
+- Turret shoot - Turret_shootN (1-4)
+- Player thruster - Thruster
+- Player explosion - Big_Explosion
+- Turret explosion - Explosion11, Explosion13
+- For later:
+	- Tractor beam - Tractor_Beam
+	- Power up
+	- Asteroid explosion

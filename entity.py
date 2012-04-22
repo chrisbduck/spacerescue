@@ -130,6 +130,7 @@ class EntityManager(object):
 class Entity(object):
 	
 	_images = {}
+	_sounds = {}
 	debug_rects = False
 	
 	def __init__(self, centre_pos, image, name):
@@ -151,6 +152,16 @@ class Entity(object):
 		if image_name not in Entity._images:
 			Entity._images[image_name] = pygame.image.load(image_name + '.png')
 		return Entity._images[image_name]
+		
+	@staticmethod
+	def getSound(sound_name):
+		if sound_name not in Entity._sounds:
+			Entity._sounds[sound_name] = pygame.mixer.Sound(sound_name + '.ogg')
+		return Entity._sounds[sound_name]
+		
+	@staticmethod
+	def playRandomSound(snd_list):
+		snd_list[random.randint(0, len(snd_list) - 1)].play()
 		
 	def getCentre(self):
 		return (self._fpos[0] + self._rect.width / 2.0,
@@ -239,6 +250,9 @@ class TurretEntity(Entity):
 	
 	_count = 0
 	
+	_shoot_sounds = [Entity.getSound('data/sfx/Turret_shoot%d' % n) for n in range(1, 5)]
+	_explosion_sounds = [Entity.getSound('data/sfx/Explosion%d' % n) for n in (11, 13)]
+	
 	def __init__(self, asteroid, angle_deg):
 		TurretEntity._count += 1
 		angle_rad = angle_deg * DEG_TO_RAD
@@ -256,6 +270,10 @@ class TurretEntity(Entity):
 									(0.9 + 0.2 * random.random()))
 		self._shot_cooldown = 0
 		self.vulnerable = True
+		
+	def destroy(self):
+		super(TurretEntity, self).destroy()
+		Entity.playRandomSound(TurretEntity._explosion_sounds)
 		
 	def update(self):
 		super(TurretEntity, self).update()
@@ -284,6 +302,7 @@ class TurretEntity(Entity):
 								(dir_to_player[0] * TURRET_SHOT_SPEED,
 								dir_to_player[1] * TURRET_SHOT_SPEED),
 								shot_by_player=False, shot_by_name=self.name)
+					Entity.playRandomSound(TurretEntity._shoot_sounds)
 					self._shot_cooldown = self._shoot_interval
 
 #-------------------------------------------------------------------------------
@@ -337,6 +356,11 @@ class PlayerEntity(Entity):
 		self._accel_multiplier = 8.0
 		self._angle_deg = 0.0
 		self.vulnerable = True
+		self._shoot_sound = Entity.getSound('data/sfx/Player_Shoot')
+		self._explosion_sound = Entity.getSound('data/sfx/Big_Explosion')
+		self._thruster_sound = Entity.getSound('data/sfx/Thruster')
+		self._thruster_sound.set_volume(0.25)
+		self._thruster_channel = None
 		
 	def accelerate(self, amount):
 		self._fvel[0] += amount[0] * self._accel_multiplier
@@ -345,6 +369,9 @@ class PlayerEntity(Entity):
 			self._angle_deg = 0 if amount[0] > 0.0 else 180
 		else:
 			self._angle_deg = math.atan2(-amount[1], amount[0]) * RAD_TO_DEG
+		# Assume this was the player's thruster input (may need to change this later)
+		if self._thruster_channel is None or not self._thruster_channel.get_busy():
+			self._thruster_channel = self._thruster_sound.play()
 		
 	def reset(self):
 		global _screen_rect
@@ -364,6 +391,11 @@ class PlayerEntity(Entity):
 		dy = -math.sin(angle_rad)
 		BulletEntity((x + dx * radius, y + dy * radius),
 					 (dx * PLAYER_SHOT_SPEED, dy * PLAYER_SHOT_SPEED), shot_by_player=True)
+		self._shoot_sound.play()
+		
+	def destroy(self):
+		super(PlayerEntity, self).destroy()
+		self._explosion_sound.play()
 		
 #-------------------------------------------------------------------------------
 def init(screen, screen_rect):
