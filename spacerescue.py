@@ -72,6 +72,8 @@ class App(object):
 		
 	#-------------------------------------------------------------------------------
 	def run(self):
+		misc.startMusic()
+		
 		while True:
 			if not self.updateEvents():
 				break

@@ -45,3 +45,12 @@ Sounds needed
 	- Tractor beam - Tractor_Beam
 	- Power up
 	- Asteroid explosion
+
+Credits
+-------
+
+Thanks to GreaseMonkey for the music generator!
+http://www.ludumdare.com/compo/2011/12/13/if-you-find-it-hard-to-make-music-read-this/#more-82720
+
+Thanks to increpare for Bfxr! (and others for its various ancestors such as sfxr)
+http://www.bfxr.net/

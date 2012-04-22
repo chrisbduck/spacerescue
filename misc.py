@@ -37,3 +37,8 @@ def renderText(text, pos, col):
 	_screen.blit(text_surface, rect)
 
 #-------------------------------------------------------------------------------
+def startMusic():
+	pygame.mixer.music.load('data/music/body-demoscene.ogg')
+	pygame.mixer.music.play(-1)		# loop forever
+
+#-------------------------------------------------------------------------------
