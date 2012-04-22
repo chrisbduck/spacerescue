@@ -102,10 +102,15 @@ class PlayerEntity(Entity):
 		PlayerEntity._instance = self
 		super(PlayerEntity, self).__init__(pos, 'data/player-ship', 'player')
 		self._accel_multiplier = 10.0
+		self._angle = 0.0
 		
 	def accelerate(self, amount):
 		self._fvel[0] += amount[0] * self._accel_multiplier
 		self._fvel[1] += amount[1] * self._accel_multiplier
+		if amount[1] == 0.0:
+			self._angle = 0 if amount[0] > 0.0 else 180
+		else:
+			self._angle = math.atan2(-amount[1], amount[0]) * 180 / math.pi
 		
 	def reset(self):
 		global _screen_rect
@@ -116,6 +121,13 @@ class PlayerEntity(Entity):
 	def getCentre(self):
 		return (self._fpos[0] + self._rect.width / 2.0,
 				self._fpos[1] + self._rect.height / 2.0)
+		
+	def render(self, screen):
+		rotated = pygame.transform.rotate(self._image, self._angle)
+		rotated_rect = rotated.get_rect()
+		rotated_rect.move_ip(self._fpos[0] + (self._rect.width - rotated_rect.width) / 2.0,
+							 self._fpos[1] + (self._rect.height - rotated_rect.height) / 2.0)
+		screen.blit(rotated, rotated_rect)
 		
 #-------------------------------------------------------------------------------
 def init(screen, screen_rect, renderText):
