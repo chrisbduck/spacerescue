@@ -16,6 +16,7 @@ IN_GAME_MUSIC = 0
 MENU_MUSIC = 1
 
 score = 0
+deaths = 0
 _default_font = None
 _screen = None
 _screen_rect = None
@@ -67,5 +68,11 @@ def startMusic(music_id):
 		raise RuntimeError("Unrecognised music! (%s)" % music_id)
 	pygame.mixer.music.load('data/music/' + file_name + '.ogg')
 	pygame.mixer.music.play(-1)		# loop forever
+
+#-------------------------------------------------------------------------------
+def reset():
+	global score, deaths
+	score = 0
+	deaths = 0
 
 #-------------------------------------------------------------------------------

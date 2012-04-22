@@ -83,6 +83,7 @@ class App(object):
 			self._return_to_menu = False
 			
 			entity.mgr.generate()
+			misc.reset()
 			misc.startMusic(misc.IN_GAME_MUSIC)
 			
 			while True:
@@ -123,7 +124,8 @@ class App(object):
 					return False
 				elif event.key == pygame.K_p:
 					self._paused = not self._paused
-				elif event.key == pygame.K_HASH:
+				elif event.key == pygame.K_HASH	\
+						or event.key == pygame.K_RETURN and not entity.player.alive:
 					entity.player.reset()
 				elif event.key == pygame.K_SLASH:
 					entity.Entity.debug_rects = not entity.Entity.debug_rects
@@ -169,7 +171,8 @@ class App(object):
 						pos=(0, 0), col=(128, 128, 128))
 		misc.renderText("Paused" if self._paused else "Running",
 						pos=(0, 40), col=(220, 220, 220))
-		misc.renderText("Score: %d" % misc.score, pos=(misc.CENTRE, 0), col=(255, 255, 40))
+		text = "Score: %d  Deaths: %d" % (misc.score, misc.deaths)
+		misc.renderText(text, pos=(misc.CENTRE, 0), col=(255, 255, 40))
 
 #-------------------------------------------------------------------------------
 

@@ -18,6 +18,9 @@ TWO_PI = 2 * math.pi
 DEG_TO_RAD = math.pi / 180
 RAD_TO_DEG = 180 / math.pi
 
+DEATH_SCORE_PENALTY = 5
+PLAYER_INITIAL_POS = (30.0, 300.0)
+
 _screen = None
 
 #-------------------------------------------------------------------------------
@@ -41,7 +44,7 @@ class EntityManager(object):
 		asteroid = AsteroidEntity((500, 300))
 		self._generateTurrets()
 		global player
-		player = PlayerEntity((30, 300))
+		player = PlayerEntity(PLAYER_INITIAL_POS)
 		
 	#-------------------------------------------------------------------------------
 	def _generateTurrets(self):
@@ -435,8 +438,7 @@ class PlayerEntity(Entity):
 	#-------------------------------------------------------------------------------
 	def reset(self):
 		global _screen_rect
-		self._fpos[0] = (_screen_rect.width - self._rect.width) / 2.0
-		self._fpos[1] = (_screen_rect.height - self._rect.height) / 2.0
+		self._fpos = list(PLAYER_INITIAL_POS)
 		self._fvel[:] = [0.0, 0.0]
 		if not self.alive:
 			self.alive = True
@@ -459,6 +461,8 @@ class PlayerEntity(Entity):
 	#-------------------------------------------------------------------------------
 	def destroy(self):
 		super(PlayerEntity, self).destroy()
+		misc.score -= DEATH_SCORE_PENALTY
+		misc.deaths += 1
 		self._explosion_sound.play()
 		
 #-------------------------------------------------------------------------------
