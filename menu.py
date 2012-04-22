@@ -16,6 +16,7 @@ import time
 SELECTED_COL = (8, 8, 64)
 UNSELECTED_COL = (8, 8, 8)
 CREDITS_COL = (220, 180, 60)
+KEYS_COL = (128, 255, 128)
 
 credit_text = """
 Many thanks go to:
@@ -25,6 +26,14 @@ Many thanks go to:
   sfxr and co)
 - vilya, for convincing me to give this
   competition a go :)
+""".split('\n')
+
+keys_text = """
+Num pad, arrow keys, or WERSFXCV to move
+SPACE to shoot
+P to pause
+# to reset the player ship
+/ for debugging stuff
 """.split('\n')
 
 #-------------------------------------------------------------------------------
@@ -108,6 +117,13 @@ class Menu(object):
 			if line.strip() != "":
 				misc.renderText(line, (50, y), CREDITS_COL, self._mid_font)
 				y += spacing
+		
+	def renderKeyHelp(self):
+		y = 455
+		for line in keys_text:
+			if line.strip() != "":
+				misc.renderText(line, (misc.CENTRE, y), KEYS_COL)
+				y += 18
 	
 	def render(self):
 		self._screen.blit(self._bg, self._bg_rect)
@@ -118,6 +134,7 @@ class Menu(object):
 		else:
 			misc.renderText('SPACE RESCUE!', (misc.CENTRE, 100), (255, 235, 50), self._big_font)
 			self.renderMenuOptions()
+			self.renderKeyHelp()
 		pygame.display.flip()
 		
 	def run(self):

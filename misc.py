@@ -32,10 +32,14 @@ def getFont(pixel_size):
 	# Select a font
 	if 'ubuntu' in pygame.font.get_fonts():
 		try:
-			return pygame.font.Font('ubuntu', pixel_size)
+			return pygame.font.SysFont('ubuntu', pixel_size, bold=True)
 		except IOError:
 			pass
-	return pygame.font.Font(pygame.font.get_default_font(), pixel_size)
+	try:
+		return pygame.font.Font(pygame.font.get_default_font(), pixel_size, bold=True)
+	except IOError:
+		pass
+	return pygame.font.Font(None, pixel_size, bold=True)
 
 #-------------------------------------------------------------------------------
 def renderText(text, pos, col, font=None):
