@@ -22,9 +22,40 @@ _screen = None
 
 #-------------------------------------------------------------------------------
 class EntityManager(object):
+	#-------------------------------------------------------------------------------
 	def __init__(self):
-		self._entities = []
+		self.clear()
 		
+	#-------------------------------------------------------------------------------
+	def clear(self):
+		self._entities = []
+		global asteroid
+		asteroid = None
+		global player
+		player = None
+		PlayerEntity._instance = None
+		
+	#-------------------------------------------------------------------------------
+	def generate(self):
+		global asteroid
+		asteroid = AsteroidEntity((500, 300))
+		self._generateTurrets()
+		global player
+		player = PlayerEntity((30, 300))
+		
+	#-------------------------------------------------------------------------------
+	def _generateTurrets(self):
+		# Start with two around the entrance
+		turret_angles = [170, 191]
+		while len(turret_angles) < NUM_TURRETS:
+			new_angle = random.randint(0, 359)
+			# Don't put them too close to another
+			if not any([abs(new_angle - angle) < 15 for angle in turret_angles]):
+				turret_angles.append(new_angle)
+		
+		[TurretEntity(asteroid, angle) for angle in turret_angles]
+
+	#-------------------------------------------------------------------------------
 	def update(self):
 		# Update all
 		[entity.update() for entity in self._entities]
@@ -33,12 +64,15 @@ class EntityManager(object):
 		# Remove dead stuff
 		self._entities = [entity for entity in self._entities if entity.alive]
 		
+	#-------------------------------------------------------------------------------
 	def render(self, screen):
 		[entity.render(screen) for entity in self._entities]
 		
+	#-------------------------------------------------------------------------------
 	def add(self, entity):
 		self._entities.append(entity)
 		
+	#-------------------------------------------------------------------------------
 	def testForCollisions(self):
 		bullets = [entity for entity in self._entities if isinstance(entity, BulletEntity)]
 		vulnerables = [entity for entity in self._entities if entity.vulnerable]
@@ -133,6 +167,7 @@ class Entity(object):
 	_sounds = {}
 	debug_rects = False
 	
+	#-------------------------------------------------------------------------------
 	def __init__(self, centre_pos, image, name):
 		if image is not None:
 			self._image = Entity.getImage(image)
@@ -147,48 +182,58 @@ class Entity(object):
 		self.alive = True
 		mgr.add(self)
 		
+	#-------------------------------------------------------------------------------
 	@staticmethod
 	def getImage(image_name):
 		if image_name not in Entity._images:
 			Entity._images[image_name] = pygame.image.load(image_name + '.png')
 		return Entity._images[image_name]
 		
+	#-------------------------------------------------------------------------------
 	@staticmethod
 	def getSound(sound_name):
 		if sound_name not in Entity._sounds:
 			Entity._sounds[sound_name] = pygame.mixer.Sound(sound_name + '.ogg')
 		return Entity._sounds[sound_name]
 		
+	#-------------------------------------------------------------------------------
 	@staticmethod
 	def playRandomSound(snd_list):
 		snd_list[random.randint(0, len(snd_list) - 1)].play()
 		
+	#-------------------------------------------------------------------------------
 	def getCentre(self):
 		return (self._fpos[0] + self._rect.width / 2.0,
 				self._fpos[1] + self._rect.height / 2.0)
 		
+	#-------------------------------------------------------------------------------
 	def getRadius(self):
 		return self._rect.width / 2.0
 	
+	#-------------------------------------------------------------------------------
 	def setRect(self, x, y, width, height):
 		self._rect = pygame.Rect(x, y, width, height)
 		self._fpos = [float(x), float(y)]
 		
+	#-------------------------------------------------------------------------------
 	def hasCollidedWith(self, entity):
 		if not self._rect.colliderect(entity):
 			return False
 		# TO DO: add masks
 		return True
 		
+	#-------------------------------------------------------------------------------
 	def destroy(self):
 		self.alive = False
 	
+	#-------------------------------------------------------------------------------
 	def update(self):
 		self._fpos[0] += self._fvel[0]
 		self._fpos[1] += self._fvel[1]
 		self._rect.left = int(self._fpos[0])
 		self._rect.top = int(self._fpos[1])
 	
+	#-------------------------------------------------------------------------------
 	def render(self, screen):
 		if self._angle_deg is not None:
 			# Rotated render
@@ -207,6 +252,7 @@ class Entity(object):
 class AsteroidEntity(Entity):
 	_count = 0
 	
+	#-------------------------------------------------------------------------------
 	def __init__(self, pos):
 		AsteroidEntity._count += 1
 		name = 'asteroid%d' % AsteroidEntity._count
@@ -214,9 +260,11 @@ class AsteroidEntity(Entity):
 		self._hollow_image = Entity.getImage('data/asteroid-hollow')
 		self._hollow_opacity = 0.0
 		
+	#-------------------------------------------------------------------------------
 	def getInnerRadius(self):
 		return self.getRadius() * 0.9
 	
+	#-------------------------------------------------------------------------------
 	def update(self):
 		# Work out how far away the player is from the asteroid centre
 		asteroid_ctr = self.getCentre()
@@ -234,6 +282,7 @@ class AsteroidEntity(Entity):
 		else:
 			self._hollow_opacity = 1.0 - dist_outside_radius / 100.0
 		
+	#-------------------------------------------------------------------------------
 	def render(self, screen):
 		screen.blit(self._image, self._rect)
 		if self._hollow_opacity > 0.0:
@@ -253,6 +302,7 @@ class TurretEntity(Entity):
 	_shoot_sounds = [Entity.getSound('data/sfx/Turret_shoot%d' % n) for n in range(1, 5)]
 	_explosion_sounds = [Entity.getSound('data/sfx/Explosion%d' % n) for n in (11, 13)]
 	
+	#-------------------------------------------------------------------------------
 	def __init__(self, asteroid, angle_deg):
 		TurretEntity._count += 1
 		angle_rad = angle_deg * DEG_TO_RAD
@@ -271,10 +321,12 @@ class TurretEntity(Entity):
 		self._shot_cooldown = 0
 		self.vulnerable = True
 		
+	#-------------------------------------------------------------------------------
 	def destroy(self):
 		super(TurretEntity, self).destroy()
 		Entity.playRandomSound(TurretEntity._explosion_sounds)
 		
+	#-------------------------------------------------------------------------------
 	def update(self):
 		super(TurretEntity, self).update()
 		# Wind down the shooting timer if needed
@@ -308,6 +360,7 @@ class TurretEntity(Entity):
 #-------------------------------------------------------------------------------
 class BulletEntity(Entity):
 	_count = 0
+	#-------------------------------------------------------------------------------
 	def __init__(self, pos, vel, shot_by_player=True, shot_by_name=''):
 		BulletEntity._count += 1
 		if shot_by_player:
@@ -334,12 +387,14 @@ class BulletEntity(Entity):
 		self.setRect(min(pos[0], other_corner[0]), min(pos[1], other_corner[1]),
 					 abs(shot_offset[0]), abs(shot_offset[1]))
 		
+	#-------------------------------------------------------------------------------
 	def update(self):
 		super(BulletEntity, self).update()
 		# Standard easy "remove bullets when off screen" system for now
 		if not self._rect.colliderect(_screen_rect):
 			self.alive = False
 	
+	#-------------------------------------------------------------------------------
 	def render(self, screen):
 		col = (255, 220, 0) if self._shot_by_player else (255, 40, 0)	# yellowish / reddish
 		start_pos = (self._rect.left, self._rect.bottom if self._bl_to_tr else self._rect.top)
@@ -349,6 +404,7 @@ class BulletEntity(Entity):
 #-------------------------------------------------------------------------------
 class PlayerEntity(Entity):
 	_instance = None
+	#-------------------------------------------------------------------------------
 	def __init__(self, pos):
 		assert(PlayerEntity._instance is None)
 		PlayerEntity._instance = self
@@ -362,7 +418,10 @@ class PlayerEntity(Entity):
 		self._thruster_sound.set_volume(0.25)
 		self._thruster_channel = None
 		
+	#-------------------------------------------------------------------------------
 	def accelerate(self, amount):
+		if not self.alive:
+			return
 		self._fvel[0] += amount[0] * self._accel_multiplier
 		self._fvel[1] += amount[1] * self._accel_multiplier
 		if amount[1] == 0.0:
@@ -373,6 +432,7 @@ class PlayerEntity(Entity):
 		if self._thruster_channel is None or not self._thruster_channel.get_busy():
 			self._thruster_channel = self._thruster_sound.play()
 		
+	#-------------------------------------------------------------------------------
 	def reset(self):
 		global _screen_rect
 		self._fpos[0] = (_screen_rect.width - self._rect.width) / 2.0
@@ -382,7 +442,10 @@ class PlayerEntity(Entity):
 			self.alive = True
 			mgr.add(self)
 		
+	#-------------------------------------------------------------------------------
 	def shoot(self):
+		if not self.alive:
+			return
 		# Start the shot away from the player ship in the angle it's facing
 		x, y = self.getCentre()
 		radius = self.getRadius()
@@ -393,6 +456,7 @@ class PlayerEntity(Entity):
 					 (dx * PLAYER_SHOT_SPEED, dy * PLAYER_SHOT_SPEED), shot_by_player=True)
 		self._shoot_sound.play()
 		
+	#-------------------------------------------------------------------------------
 	def destroy(self):
 		super(PlayerEntity, self).destroy()
 		self._explosion_sound.play()
@@ -404,24 +468,8 @@ def init(screen, screen_rect):
 	_screen_rect = screen_rect
 
 #-------------------------------------------------------------------------------
-def generateTurrets():
-	# Start with two around the entrance
-	turret_angles = [170, 191]
-	while len(turret_angles) < NUM_TURRETS:
-		new_angle = random.randint(0, 359)
-		# Don't put them too close to another
-		if not any([abs(new_angle - angle) < 15 for angle in turret_angles]):
-			turret_angles.append(new_angle)
-	
-	[TurretEntity(asteroid, angle) for angle in turret_angles]
-
-#-------------------------------------------------------------------------------
 
 mgr = EntityManager()
 
-asteroid = AsteroidEntity((500, 300))
-
-generateTurrets()
-
-player = PlayerEntity((30, 300))
-
+asteroid = None
+player = None

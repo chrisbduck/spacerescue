@@ -67,25 +67,35 @@ class App(object):
 												pygame.DOUBLEBUF | pygame.HWSURFACE)
 		self._next_frame_tick = 0
 		self._paused = False
+		self._return_to_menu = True
 		self._keys_down = set()
 		entity.init(self._screen, self._screen_rect)
 		misc.init(self._screen, self._screen_rect)
 		self._menu = menu.Menu(self._screen, self._screen_rect)
+		self._skip_menu = '--nomenu' in sys.argv
 		
 	#-------------------------------------------------------------------------------
 	def run(self):
-		if not self._menu.run():
-			return
-		
-		misc.startMusic()
-		
-		while True:
-			if not self.updateEvents():
+		while self._return_to_menu:
+			if not self._skip_menu:
+				if not self._menu.run():
+					return
+			self._return_to_menu = False
+			
+			entity.mgr.generate()
+			misc.startMusic(misc.IN_GAME_MUSIC)
+			
+			while True:
+				if not self.updateEvents():
+					break
+				if not self._paused:
+					self.processPlayerInput()
+					entity.mgr.update()
+				self.render()
+			
+			entity.mgr.clear()
+			if self._skip_menu:
 				break
-			if not self._paused:
-				self.processPlayerInput()
-				entity.mgr.update()
-			self.render()
 		
 	#-------------------------------------------------------------------------------
 	def updateEvents(self):
@@ -109,6 +119,7 @@ class App(object):
 				elif event.key == pygame.K_SPACE:
 					entity.player.shoot()
 				elif event.key == pygame.K_ESCAPE:
+					self._return_to_menu = True
 					return False
 				elif event.key == pygame.K_p:
 					self._paused = not self._paused
