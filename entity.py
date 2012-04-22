@@ -296,10 +296,24 @@ def init(screen, screen_rect, renderText):
 	_renderText = renderText
 
 #-------------------------------------------------------------------------------
+def generateTurrets():
+	# Start with two around the entrance
+	turret_angles = [170, 191]
+	while len(turret_angles) < NUM_TURRETS:
+		new_angle = random.randint(0, 359)
+		# Don't put them too close to another
+		if not any([abs(new_angle - angle) < 15 for angle in turret_angles]):
+			turret_angles.append(new_angle)
+	
+	[TurretEntity(asteroid, angle) for angle in turret_angles]
+
+#-------------------------------------------------------------------------------
 
 mgr = EntityManager()
 
 asteroid = AsteroidEntity((500, 300))
-[TurretEntity(asteroid, random.randint(0, 359)) for n in range(NUM_TURRETS)]
+
+generateTurrets()
+
 player = PlayerEntity((30, 300))
 
