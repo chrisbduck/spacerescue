@@ -45,7 +45,7 @@ class EntityManager(object):
 		for b in bullets:
 			collided_with = b._rect.collidelist(vulnerable_rects)
 			if collided_with >= 0:
-				print vulnerables[collided_with]._name, 'was shot by', b._name	# (bullet name)
+				print vulnerables[collided_with].name, 'was shot by', b.name	# (bullet name)
 				b.destroy()
 				vulnerables[collided_with].destroy()
 		# Collide vulnerables with other vulnerables
@@ -61,7 +61,7 @@ class EntityManager(object):
 			
 			collided_with = v._rect.collidelist(vuln_rects_test)
 			if collided_with > 0:
-				print v._name, 'ran into', vulnerables[collided_with]._name
+				print v.name, 'ran into', vulnerables[collided_with].name
 				v.destroy()
 				vulnerables[collided_with].destroy()
 
@@ -80,7 +80,7 @@ class Entity(object):
 			self._rect.move_ip(self._fpos)
 		self._fvel = [0.0, 0.0]
 		self._angle_deg = None
-		self._name = name
+		self.name = name
 		self.vulnerable = False		# can be shot
 		self.alive = True
 		mgr.add(self)
@@ -214,15 +214,24 @@ class TurretEntity(Entity):
 					BulletEntity((turret_centre[0] + dir_to_player[0] * turret_radius,
 								turret_centre[1] + dir_to_player[1] * turret_radius),
 								(dir_to_player[0] * TURRET_SHOT_SPEED,
-								dir_to_player[1] * TURRET_SHOT_SPEED), shot_by_player=False)
+								dir_to_player[1] * TURRET_SHOT_SPEED),
+								shot_by_player=False, shot_by_name=self.name)
 					self._shot_cooldown = self._shoot_interval
 
 #-------------------------------------------------------------------------------
 class BulletEntity(Entity):
 	_count = 0
-	def __init__(self, pos, vel, shot_by_player=True):
+	def __init__(self, pos, vel, shot_by_player=True, shot_by_name=''):
 		BulletEntity._count += 1
-		super(BulletEntity, self).__init__(pos, None, 'bullet%d' % BulletEntity._count)
+		if shot_by_player:
+			name = 'player_'
+		else:
+			name = shot_by_name
+			if shot_by_name != '':
+				name += '_'
+		name += 'bullet%d' % BulletEntity._count
+		super(BulletEntity, self).__init__(pos, None, name)
+		
 		vel = [float(vel[0]), float(vel[1])]
 		self._fvel = vel
 		self._shot_by_player = shot_by_player
