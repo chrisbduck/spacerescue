@@ -24,7 +24,18 @@ class EntityManager(object):
 	def update(self):
 		# Update all
 		[entity.update() for entity in self._entities]
+		# Collide
+		self.testForCollisions()
+		# Remove dead stuff
+		self._entities = [entity for entity in self._entities if entity.alive]
 		
+	def render(self, screen):
+		[entity.render(screen) for entity in self._entities]
+		
+	def add(self, entity):
+		self._entities.append(entity)
+		
+	def testForCollisions(self):
 		# Collide all
 		bullets = [entity for entity in self._entities if isinstance(entity, BulletEntity)]
 		vulnerables = [entity for entity in self._entities if entity.vulnerable]
@@ -53,15 +64,6 @@ class EntityManager(object):
 				print v._name, 'ran into', vulnerables[collided_with]._name
 				v.destroy()
 				vulnerables[collided_with].destroy()
-		
-		# Remove dead stuff
-		self._entities = [entity for entity in self._entities if entity.alive]
-		
-	def render(self, screen):
-		[entity.render(screen) for entity in self._entities]
-		
-	def add(self, entity):
-		self._entities.append(entity)
 
 #-------------------------------------------------------------------------------
 class Entity(object):
