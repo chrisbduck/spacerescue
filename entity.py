@@ -100,7 +100,7 @@ class PlayerEntity(Entity):
 	def __init__(self, pos):
 		assert(PlayerEntity._instance is None)
 		PlayerEntity._instance = self
-		super(PlayerEntity, self).__init__(pos, 'placeholders/big-bob', 'player')
+		super(PlayerEntity, self).__init__(pos, 'data/player-ship', 'player')
 		self._accel_multiplier = 10.0
 		
 	def accelerate(self, amount):
