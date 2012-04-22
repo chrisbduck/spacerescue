@@ -36,11 +36,11 @@ class EntityManager(object):
 		self._entities.append(entity)
 		
 	def testForCollisions(self):
-		# Collide all
 		bullets = [entity for entity in self._entities if isinstance(entity, BulletEntity)]
 		vulnerables = [entity for entity in self._entities if entity.vulnerable]
 		bullet_rects = [entity._rect for entity in bullets]
 		vulnerable_rects = [entity._rect for entity in vulnerables]
+		
 		# Collide bullets with vulnerables
 		for b in bullets:
 			collided_with = b._rect.collidelist(vulnerable_rects)
@@ -50,6 +50,7 @@ class EntityManager(object):
 					misc.score += 1
 				b.destroy()
 				vulnerables[collided_with].destroy()
+		
 		# Collide vulnerables with other vulnerables
 		for v in (player,):		# was vulnerables; avoiding turret-turret collisions for now
 			# Remove this vulnerable from the list to check, or it'll always collide with itself
@@ -66,6 +67,32 @@ class EntityManager(object):
 				print v.name, 'ran into', vulnerables[collided_with].name
 				v.destroy()
 				vulnerables[collided_with].destroy()
+		
+		# Collide the player and all bullets with the asteroid surface
+		# Easiest way is intersecting two spheres with the entity's rect
+		asteroid_tests = list(bullets)
+		asteroid_rects = list(bullet_rects)
+		if player.alive:
+			asteroid_tests.append(player)
+			asteroid_rects.append(player._rect)
+		asteroid_ctr = asteroid.getCentre()
+		asteroid_outer_radius = asteroid.getRadius()
+		asteroid_inner_radius = asteroid.getInnerRadius()
+		for index in xrange(len(asteroid_tests)):
+			# Doing sphere-sphere collision here for now because it's easier
+			entity = asteroid_tests[index]
+			rect = asteroid_rects[index]
+			entity_radius = entity.getRadius()
+			offset = (rect.centerx - asteroid_ctr[0], rect.centery - asteroid_ctr[1])
+			offset_dist = math.sqrt(offset[0] * offset[0] + offset[1] * offset[1])
+			entity_outer_dist = offset_dist + entity_radius
+			entity_inner_dist = offset_dist - entity_radius
+			# Collision if offset distance < asteroid outer radius + entity
+			if entity_outer_dist > asteroid_inner_radius \
+					and entity_inner_dist < asteroid_outer_radius:
+				# TO DO: Check the offset angle to see if the entity went through the entrance
+				print entity.name, 'ran into', asteroid.name
+				entity.destroy()
 
 #-------------------------------------------------------------------------------
 class Entity(object):
@@ -135,11 +162,18 @@ class Entity(object):
 	
 #-------------------------------------------------------------------------------
 class AsteroidEntity(Entity):
+	_count = 0
+	
 	def __init__(self, pos):
-		super(AsteroidEntity, self).__init__(pos, 'data/asteroid', 'asteroid')
+		AsteroidEntity._count += 1
+		name = 'asteroid%d' % AsteroidEntity._count
+		super(AsteroidEntity, self).__init__(pos, 'data/asteroid', name)
 		self._hollow_image = Entity.getImage('data/asteroid-hollow')
 		self._hollow_opacity = 0.0
 		
+	def getInnerRadius(self):
+		return self.getRadius() * 0.9
+	
 	def update(self):
 		# Work out how far away the player is from the asteroid centre
 		asteroid_ctr = self.getCentre()
