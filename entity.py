@@ -132,8 +132,9 @@ class TurretEntity(Entity):
 		radius = asteroid.getRadius()
 		radius += 4 	# slight fudge factor :) - half of turret pixel radius
 		pos = list(asteroid.getCentre())
-		pos[0] += radius * math.cos(angle_rad)
-		pos[1] -= radius * math.sin(angle_rad)
+		self._point_dir = (math.cos(angle_rad), -math.sin(angle_rad))
+		pos[0] += radius * self._point_dir[0]
+		pos[1] += radius * self._point_dir[1]
 		super(TurretEntity, self).__init__(pos, 'data/gun-turret',
 			'gun-turret%d' % TurretEntity._count)
 		# Match the turret orientation to its angle from the asteroid centre
@@ -154,17 +155,21 @@ class TurretEntity(Entity):
 			dist_sq_to_player = offset_to_player[0] * offset_to_player[0] \
 								+ offset_to_player[1] * offset_to_player[1]
 			if dist_sq_to_player < TurretEntity.SHOOT_RANGE_SQ:
-				# Shoot at the player
+				# Check that the angle isn't more than a set amount from the turret's orientation
 				dist_to_player = math.sqrt(dist_sq_to_player)
 				dir_to_player = (offset_to_player[0] / dist_to_player,
 								 offset_to_player[1] / dist_to_player)
-				turret_radius = self.getRadius()
-				turret_centre = self.getCentre()
-				BulletEntity((turret_centre[0] + dir_to_player[0] * turret_radius,
-							  turret_centre[1] + dir_to_player[1] * turret_radius),
-							 (dir_to_player[0] * TURRET_SHOT_SPEED,
-							  dir_to_player[1] * TURRET_SHOT_SPEED), shot_by_player=False)
-				self._shot_cooldown = self._shoot_interval
+				dot_product = self._point_dir[0] * dir_to_player[0] \
+							+ self._point_dir[1] * dir_to_player[1]
+				if dot_product >= 0.1:		# same direction; must be slightly less then 90 degrees
+					# Shoot at the player
+					turret_radius = self.getRadius()
+					turret_centre = self.getCentre()
+					BulletEntity((turret_centre[0] + dir_to_player[0] * turret_radius,
+								turret_centre[1] + dir_to_player[1] * turret_radius),
+								(dir_to_player[0] * TURRET_SHOT_SPEED,
+								dir_to_player[1] * TURRET_SHOT_SPEED), shot_by_player=False)
+					self._shot_cooldown = self._shoot_interval
 
 #-------------------------------------------------------------------------------
 class BulletEntity(Entity):
