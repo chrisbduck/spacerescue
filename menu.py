@@ -31,10 +31,10 @@ Many thanks go to:
 """.split('\n')
 
 keys_text = """
-Num pad, arrow keys, or WERSFXCV to move
+Num pad, arrow keys, or WERSFXCV to accelerate
 SPACE to shoot
 P to pause
-# to reset the player ship
+# to reset the player ship (and lose points!)
 / for debugging stuff
 """.split('\n')
 
@@ -128,7 +128,7 @@ class Menu(object):
 				y += spacing
 		
 	def renderKeyHelp(self):
-		y = 455
+		y = 465
 		for line in keys_text:
 			if line.strip() != "":
 				misc.renderText(line, (misc.CENTRE, y), KEYS_COL)
@@ -142,6 +142,8 @@ class Menu(object):
 			self.renderSelectableText('Back', (misc.CENTRE, 500), self._mid_font)
 		else:
 			misc.renderText('SPACE RESCUE!', (misc.CENTRE, 100), (255, 235, 50), self._big_font)
+			misc.renderText('Shoot turrets!', (misc.CENTRE, 210), (180, 180, 255))
+			misc.renderText('Rescue spacemen!', (misc.CENTRE, 230), (180, 180, 255))
 			self.renderMenuOptions()
 			self.renderKeyHelp()
 		pygame.display.flip()
