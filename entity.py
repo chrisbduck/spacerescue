@@ -369,7 +369,7 @@ class AsteroidEntity(Entity):
 			screen.blit(self._hollow_image, self._rect)
 		if misc.debug:
 			misc.renderText('Hollow asteroid alpha: %d%%' % (self._hollow_opacity * 100),
-							(0, 20), (255, 255, 255))
+							(5, 25), (255, 255, 255))
 
 #-------------------------------------------------------------------------------
 class TurretEntity(Entity):
@@ -553,7 +553,7 @@ class PlayerEntity(Entity):
 		self._shoot_sound = Entity.getSound('data/sfx/Player_Shoot')
 		self._explosion_sound = Entity.getSound('data/sfx/Big_Explosion')
 		self._thruster_sound = Entity.getSound('data/sfx/Thruster')
-		self._thruster_sound.set_volume(0.25)
+		self._thruster_sound.set_volume(0.15)
 		self._thruster_channel = None
 		
 	#-------------------------------------------------------------------------------

@@ -35,7 +35,6 @@ Num pad, arrow keys, or WERSFXCV to accelerate
 SPACE to shoot
 P to pause
 # to reset the player ship (and lose points!)
-/ for debugging stuff
 """.split('\n')
 
 #-------------------------------------------------------------------------------
