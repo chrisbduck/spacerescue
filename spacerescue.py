@@ -10,6 +10,7 @@
 
 from common import *
 import math
+import menu
 import misc
 import os
 import pygame
@@ -69,9 +70,13 @@ class App(object):
 		self._keys_down = set()
 		entity.init(self._screen, self._screen_rect)
 		misc.init(self._screen, self._screen_rect)
+		self._menu = menu.Menu(self._screen, self._screen_rect)
 		
 	#-------------------------------------------------------------------------------
 	def run(self):
+		if not self._menu.run():
+			return
+		
 		misc.startMusic()
 		
 		while True:

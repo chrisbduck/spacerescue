@@ -14,6 +14,8 @@ CENTRE = -1			# constant for text centring
 
 score = 0
 font = None
+_screen = None
+_screen_rect = None
 
 #-------------------------------------------------------------------------------
 def init(screen, screen_rect):
