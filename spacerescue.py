@@ -8,15 +8,13 @@
 # - Chris Bevan, 21-22 April, 2012
 #-------------------------------------------------------------------------------
 
+from common import *
 import math
 import os
 import pygame
 import random
 import sys
 import time
-
-BG_COLOUR = (0, 0, 0)
-MAX_FPS = 60
 
 #-------------------------------------------------------------------------------
 

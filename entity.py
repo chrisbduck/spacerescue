@@ -8,12 +8,10 @@
 # - Chris Bevan, 21-22 April, 2012
 #-------------------------------------------------------------------------------
 
+from common import *
 import math
 import pygame
 import random
-
-NUM_TURRETS = 10
-PLAYER_SHOT_SPEED = 10.0
 
 _screen = None
 _renderText = None
@@ -122,7 +120,12 @@ class AsteroidEntity(Entity):
 
 #-------------------------------------------------------------------------------
 class TurretEntity(Entity):
+	SHOOT_RANGE = 150	# if the player is within this range, the turret will shoot occasionally
+	SHOOT_RANGE_SQ = SHOOT_RANGE * SHOOT_RANGE
+	SECS_PER_SHOT = 1.0
+	
 	_count = 0
+	
 	def __init__(self, asteroid, angle_deg):
 		TurretEntity._count += 1
 		angle_rad = angle_deg * math.pi / 180
@@ -135,6 +138,33 @@ class TurretEntity(Entity):
 			'gun-turret%d' % TurretEntity._count)
 		# Match the turret orientation to its angle from the asteroid centre
 		self._angle_deg = angle_deg - 90	# base image is straight up, so rotate 90 degrees CW
+		self._shoot_interval = int(TurretEntity.SECS_PER_SHOT * MAX_FPS *
+									(0.9 + 0.2 * random.random()))
+		self._shot_cooldown = 0
+		
+	def update(self):
+		super(TurretEntity, self).update()
+		# Wind down the shooting timer if needed
+		if self._shot_cooldown > 0:
+			self._shot_cooldown -= 1
+		else:
+			# See if the player is in range to shoot at
+			offset_to_player = (player._fpos[0] - self._fpos[0],
+								player._fpos[1] - self._fpos[1])
+			dist_sq_to_player = offset_to_player[0] * offset_to_player[0] \
+								+ offset_to_player[1] * offset_to_player[1]
+			if dist_sq_to_player < TurretEntity.SHOOT_RANGE_SQ:
+				# Shoot at the player
+				dist_to_player = math.sqrt(dist_sq_to_player)
+				dir_to_player = (offset_to_player[0] / dist_to_player,
+								 offset_to_player[1] / dist_to_player)
+				turret_radius = self.getRadius()
+				turret_centre = self.getCentre()
+				BulletEntity((turret_centre[0] + dir_to_player[0] * turret_radius,
+							  turret_centre[1] + dir_to_player[1] * turret_radius),
+							 (dir_to_player[0] * TURRET_SHOT_SPEED,
+							  dir_to_player[1] * TURRET_SHOT_SPEED), shot_by_player=False)
+				self._shot_cooldown = self._shoot_interval
 
 #-------------------------------------------------------------------------------
 class BulletEntity(Entity):
@@ -148,7 +178,7 @@ class BulletEntity(Entity):
 		# Set up the rect to be the bounding box of the bullet line.
 		# It will be drawn either top-left to bottom-right, or bottom-left to top-right.
 		self._bl_to_tr = (vel[0] <= 0.0 and vel[1] > 0.0) or (vel[0] > 0.0 and vel[1] <= 0.0)
-		shot_length = 8 if shot_by_player else 3
+		shot_length = 8 if shot_by_player else 4
 		vel_length = math.sqrt(vel[0] * vel[0] + vel[1] * vel[1])
 		shot_offset = (shot_length * vel[0] / vel_length,
 						shot_length * vel[1] / vel_length)
