@@ -22,7 +22,39 @@ class EntityManager(object):
 		self._entities = []
 		
 	def update(self):
+		# Update all
 		[entity.update() for entity in self._entities]
+		
+		# Collide all
+		bullets = [entity for entity in self._entities if isinstance(entity, BulletEntity)]
+		vulnerables = [entity for entity in self._entities if entity.vulnerable]
+		bullet_rects = [entity._rect for entity in bullets]
+		vulnerable_rects = [entity._rect for entity in vulnerables]
+		# Collide bullets with vulnerables
+		for b in bullets:
+			collided_with = b._rect.collidelist(vulnerable_rects)
+			if collided_with >= 0:
+				print vulnerables[collided_with]._name, 'was shot by', b._name	# (bullet name)
+				b.destroy()
+				vulnerables[collided_with].destroy()
+		# Collide vulnerables with other vulnerables
+		for v in (player,):		# was vulnerables; avoiding turret-turret collisions for now
+			# Remove this vulnerable from the list to check, or it'll always collide with itself
+			vuln_test = vulnerables
+			vuln_rects_test = vulnerable_rects
+			for v2_index in range(len(vuln_test)):
+				if vuln_test[v2_index] is v:
+					vuln_test = vuln_test[:v2_index] + vuln_test[v2_index + 1:]
+					vuln_rects_test = vuln_rects_test[:v2_index] + vuln_rects_test[v2_index + 1:]
+					break
+			
+			collided_with = v._rect.collidelist(vuln_rects_test)
+			if collided_with > 0:
+				print v._name, 'ran into', vulnerables[collided_with]._name
+				v.destroy()
+				vulnerables[collided_with].destroy()
+		
+		# Remove dead stuff
 		self._entities = [entity for entity in self._entities if entity.alive]
 		
 	def render(self, screen):
@@ -30,14 +62,12 @@ class EntityManager(object):
 		
 	def add(self, entity):
 		self._entities.append(entity)
-		
-	def remove(self, entity):
-		self._entities.remove(entity)
 
 #-------------------------------------------------------------------------------
 class Entity(object):
 	
 	_images = {}
+	debug_rects = False
 	
 	def __init__(self, centre_pos, image, name):
 		if image is not None:
@@ -49,6 +79,7 @@ class Entity(object):
 		self._fvel = [0.0, 0.0]
 		self._angle_deg = None
 		self._name = name
+		self.vulnerable = False		# can be shot
 		self.alive = True
 		mgr.add(self)
 		
@@ -69,6 +100,15 @@ class Entity(object):
 		self._rect = pygame.Rect(x, y, width, height)
 		self._fpos = [float(x), float(y)]
 		
+	def hasCollidedWith(self, entity):
+		if not self._rect.colliderect(entity):
+			return False
+		# TO DO: add masks
+		return True
+		
+	def destroy(self):
+		self.alive = False
+	
 	def update(self):
 		self._fpos[0] += self._fvel[0]
 		self._fpos[1] += self._fvel[1]
@@ -86,6 +126,8 @@ class Entity(object):
 		else:
 			# Simple render
 			screen.blit(self._image, self._rect)
+		if Entity.debug_rects:
+			pygame.draw.rect(screen, (128, 128, 128, 128), self._rect, 1)
 	
 #-------------------------------------------------------------------------------
 class AsteroidEntity(Entity):
@@ -116,7 +158,8 @@ class AsteroidEntity(Entity):
 		if self._hollow_opacity > 0.0:
 			self._hollow_image.set_alpha(self._hollow_opacity * 255)
 			screen.blit(self._hollow_image, self._rect)
-		_renderText('Asteroid alpha: %d%%' % (self._hollow_opacity * 100), (0, 0), (255, 255, 255))
+		_renderText('Hollow asteroid alpha: %d%%' % (self._hollow_opacity * 100),
+					(0, 0), (255, 255, 255))
 
 #-------------------------------------------------------------------------------
 class TurretEntity(Entity):
@@ -142,13 +185,14 @@ class TurretEntity(Entity):
 		self._shoot_interval = int(TurretEntity.SECS_PER_SHOT * MAX_FPS *
 									(0.9 + 0.2 * random.random()))
 		self._shot_cooldown = 0
+		self.vulnerable = True
 		
 	def update(self):
 		super(TurretEntity, self).update()
 		# Wind down the shooting timer if needed
 		if self._shot_cooldown > 0:
 			self._shot_cooldown -= 1
-		else:
+		elif player.alive:
 			# See if the player is in range to shoot at
 			offset_to_player = (player._fpos[0] - self._fpos[0],
 								player._fpos[1] - self._fpos[1])
@@ -211,8 +255,9 @@ class PlayerEntity(Entity):
 		assert(PlayerEntity._instance is None)
 		PlayerEntity._instance = self
 		super(PlayerEntity, self).__init__(pos, 'data/player-ship', 'player')
-		self._accel_multiplier = 10.0
+		self._accel_multiplier = 8.0
 		self._angle_deg = 0.0
+		self.vulnerable = True
 		
 	def accelerate(self, amount):
 		self._fvel[0] += amount[0] * self._accel_multiplier
@@ -227,6 +272,9 @@ class PlayerEntity(Entity):
 		self._fpos[0] = (_screen_rect.width - self._rect.width) / 2.0
 		self._fpos[1] = (_screen_rect.height - self._rect.height) / 2.0
 		self._fvel[:] = [0.0, 0.0]
+		if not self.alive:
+			self.alive = True
+			mgr.add(self)
 		
 	def shoot(self):
 		# Start the shot away from the player ship in the angle it's facing

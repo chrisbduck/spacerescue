@@ -108,6 +108,8 @@ class App(object):
 					self._paused = not self._paused
 				elif event.key == pygame.K_HASH:
 					entity.player.reset()
+				elif event.key == pygame.K_SLASH:
+					entity.Entity.debug_rects = not entity.Entity.debug_rects
 			elif event.type == pygame.KEYUP:
 				if event.key in App.ACCEL_DIRS:
 					# This key should be in the keys down set, but there might be a key event error`
