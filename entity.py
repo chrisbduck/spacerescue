@@ -21,7 +21,6 @@ RAD_TO_DEG = 180 / math.pi
 
 DEATH_SCORE_PENALTY = 5
 RESCUE_SCORE = 3
-PLAYER_INITIAL_POS = (30.0, 300.0)
 LEVEL_UP_DISPLAY_SEC = 4
 
 _screen = None
@@ -54,7 +53,7 @@ class EntityManager(object):
 		asteroid = AsteroidEntity((500, 300))
 		self._generatePlacements()
 		global player
-		player = PlayerEntity(PLAYER_INITIAL_POS)
+		player = PlayerEntity()
 		
 	#-------------------------------------------------------------------------------
 	def _generatePlacementAngles(self, count, place_around_entrance=True, avoid_angles=None):
@@ -543,9 +542,10 @@ class SpacemanEntity(Entity):
 class PlayerEntity(Entity):
 	_instance = None
 	#-------------------------------------------------------------------------------
-	def __init__(self, pos):
+	def __init__(self):
 		assert(PlayerEntity._instance is None)
 		PlayerEntity._instance = self
+		pos = PlayerEntity.generateStartPos()
 		super(PlayerEntity, self).__init__(pos, 'data/player-ship', 'player')
 		self._accel_multiplier = 8.0
 		self._angle_deg = 0.0
@@ -571,10 +571,16 @@ class PlayerEntity(Entity):
 			self._thruster_channel = self._thruster_sound.play()
 		
 	#-------------------------------------------------------------------------------
+	@staticmethod
+	def generateStartPos():
+		return [random.random() * 40.0 + 10.0, random.random() * 500.0 + 50.0]
+		
+	#-------------------------------------------------------------------------------
 	def reset(self):
 		global _screen_rect
-		self._fpos = list(PLAYER_INITIAL_POS)
+		self._fpos = PlayerEntity.generateStartPos()
 		self._fvel[:] = [0.0, 0.0]
+		self._angle_deg = None
 		if not self.alive:
 			self.alive = True
 			mgr.add(self)
