@@ -9,6 +9,7 @@
 #-------------------------------------------------------------------------------
 
 import pygame
+import sys
 
 CENTRE = -1			# constant for text centring
 
@@ -38,6 +39,7 @@ level = 0
 _default_font = None
 _screen = None
 _screen_rect = None
+debug = "--debug" in sys.argv
 
 #-------------------------------------------------------------------------------
 def init(screen, screen_rect):
@@ -47,12 +49,19 @@ def init(screen, screen_rect):
 	_default_font = getFont(16)
 
 #-------------------------------------------------------------------------------
+if debug:
+	def debugMsg(text):
+		print text
+else:
+	debugMsg = lambda text: None
+
+#-------------------------------------------------------------------------------
 def setLevel(new_level):
 	"Sets the game level (0-based)."
 	global level, num_turrets, num_spacemen, turret_shot_speed
-	print 'Starting level', new_level
+	debugMsg('Starting level %d' % new_level)
 	level = new_level		# ignore clamping for the display
-	level_data = LEVEL_DATA[max(0, min(new_level, len(LEVEL_DATA) - 1))]	# clamp		
+	level_data = LEVEL_DATA[max(0, min(new_level, len(LEVEL_DATA) - 1))]	# clamp
 	num_turrets = level_data[0]
 	num_spacemen = level_data[1]
 	turret_shot_speed = level_data[2]

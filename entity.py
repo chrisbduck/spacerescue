@@ -13,6 +13,7 @@ import math
 import misc
 import pygame
 import random
+from misc import debugMsg
 
 TWO_PI = 2 * math.pi
 DEG_TO_RAD = math.pi / 180
@@ -145,7 +146,7 @@ class EntityManager(object):
 			collided_with_index = b._rect.collidelist(vulnerable_rects)
 			if collided_with_index >= 0:
 				collided_with = vulnerables[collided_with_index]
-				print collided_with.name, 'was shot by', b.name	# (bullet name)
+				debugMsg('%s was shot by %s' % (collided_with.name, b.name))
 				if b._shot_by_player:
 					# Lose points for shooting spacemen; gain points for shooting anything else
 					# that's vulnerable
@@ -172,10 +173,10 @@ class EntityManager(object):
 				collided_with = vulnerables[collided_with_index]
 				# If it's a spaceman, they get rescued; otherwise, the player dies
 				if v is player and isinstance(collided_with, SpacemanEntity):
-					print 'player rescued', collided_with.name
+					debugMsg('player rescued %s' % collided_with.name)
 					collided_with.rescue()
 				else:
-					print v.name, 'ran into', collided_with.name
+					debugMsg('%s ran into %s' % (v.name, collided_with.name))
 					v.destroy()
 					collided_with.destroy()
 		
@@ -230,7 +231,7 @@ class EntityManager(object):
 						in_entrance = True
 				
 				if not in_entrance:
-					print entity.name, 'hit', asteroid.name
+					debugMsg('%s hit %s' % (entity.name, asteroid.name))
 					entity.destroy()
 
 #-------------------------------------------------------------------------------
@@ -366,8 +367,9 @@ class AsteroidEntity(Entity):
 		if self._hollow_opacity > 0.0:
 			self._hollow_image.set_alpha(self._hollow_opacity * 255)
 			screen.blit(self._hollow_image, self._rect)
-		misc.renderText('Hollow asteroid alpha: %d%%' % (self._hollow_opacity * 100),
-						(0, 20), (255, 255, 255))
+		if misc.debug:
+			misc.renderText('Hollow asteroid alpha: %d%%' % (self._hollow_opacity * 100),
+							(0, 20), (255, 255, 255))
 
 #-------------------------------------------------------------------------------
 class TurretEntity(Entity):

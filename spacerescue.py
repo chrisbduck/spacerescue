@@ -172,15 +172,15 @@ class App(object):
 	def renderAllText(self):
 		misc.renderText("Player is at (%d, %d)" %
 						(entity.player._rect.left, entity.player._rect.top),
-						pos=(0, 0), col=(128, 128, 128))
+						pos=(5, 5), col=(128, 128, 128))
 		if self._paused:
-			misc.renderText("Paused", pos=(0, 40), col=(220, 220, 220))
+			misc.renderText("Paused", pos=(5, 45), col=(220, 220, 220))
 		if entity.level_up_countdown is not None:
-			misc.renderText("Level Complete!", pos=(misc.CENTRE, 0), col=(140, 255, 140))
-		misc.renderText("Level: %d" % (misc.level + 1), pos=(-10, 0), col=(255, 255, 255))
-		misc.renderText("Score: %d" % misc.score, pos=(-10, 20), col=(255, 255, 40))
-		misc.renderText("Deaths: %d" % misc.deaths, pos=(-10, 40), col=(255, 80, 40))
-		misc.renderText("Rescued: %d" % misc.rescued, pos=(-10, 60), col=(96, 255, 96))
+			misc.renderText("Level Complete!", pos=(435, 5), col=(140, 255, 140))
+		misc.renderText("Level: %d" % (misc.level + 1), pos=(-5, 5), col=(255, 255, 255))
+		misc.renderText("Score: %d" % misc.score, pos=(-5, 25), col=(255, 255, 40))
+		misc.renderText("Deaths: %d" % misc.deaths, pos=(-5, 45), col=(255, 80, 40))
+		misc.renderText("Rescued: %d" % misc.rescued, pos=(-5, 65), col=(96, 255, 96))
 
 #-------------------------------------------------------------------------------
 
