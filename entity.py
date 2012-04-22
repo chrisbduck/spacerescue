@@ -39,12 +39,28 @@ class EntityManager(object):
 		PlayerEntity._instance = None
 		
 	#-------------------------------------------------------------------------------
+	def clearBullets(self):
+		self._entities = [entity for entity in self._entities \
+							if not isinstance(entity, BulletEntity)]
+		
+	#-------------------------------------------------------------------------------
 	def generate(self):
 		global asteroid
 		asteroid = AsteroidEntity((500, 300))
 		self._generateTurrets()
 		global player
 		player = PlayerEntity(PLAYER_INITIAL_POS)
+		
+	#-------------------------------------------------------------------------------
+	def _generateTurretAngles(self):
+		# Start with two around the entrance
+		turret_angles = [170, 191]
+		while len(turret_angles) < NUM_TURRETS:
+			new_angle = random.randint(0, 359)
+			# Don't put them too close to another
+			if not any([abs(new_angle - angle) < 15 for angle in turret_angles]):
+				turret_angles.append(new_angle)
+		return turret_angles
 		
 	#-------------------------------------------------------------------------------
 	def _generateTurrets(self):
@@ -56,7 +72,8 @@ class EntityManager(object):
 			if not any([abs(new_angle - angle) < 15 for angle in turret_angles]):
 				turret_angles.append(new_angle)
 		
-		[TurretEntity(asteroid, angle) for angle in turret_angles]
+		for outside in (True, False):
+			[TurretEntity(asteroid, angle, outside) for angle in self._generateTurretAngles()]
 
 	#-------------------------------------------------------------------------------
 	def update(self):
@@ -306,23 +323,36 @@ class TurretEntity(Entity):
 	_explosion_sounds = [Entity.getSound('data/sfx/Explosion%d' % n) for n in (11, 13)]
 	
 	#-------------------------------------------------------------------------------
-	def __init__(self, asteroid, angle_deg):
+	def __init__(self, asteroid, angle_deg, outside=True):
 		TurretEntity._count += 1
 		angle_rad = angle_deg * DEG_TO_RAD
-		radius = asteroid.getRadius()
-		radius += 4 	# slight fudge factor :) - half of turret pixel radius
-		pos = list(asteroid.getCentre())
 		self._point_dir = (math.cos(angle_rad), -math.sin(angle_rad))
+		if outside:
+			radius = asteroid.getRadius()
+			radius += 4 	# slight fudge factor :) - half of turret pixel radius
+		else:
+			radius = asteroid.getInnerRadius()
+			radius -= 10	# fudge factor again
+		pos = list(asteroid.getCentre())
 		pos[0] += radius * self._point_dir[0]
 		pos[1] += radius * self._point_dir[1]
 		super(TurretEntity, self).__init__(pos, 'data/gun-turret',
 			'gun-turret%d' % TurretEntity._count)
+		
 		# Match the turret orientation to its angle from the asteroid centre
 		self._angle_deg = angle_deg - 90	# base image is straight up, so rotate 90 degrees CW
+		if not outside:
+			self._point_dir = (-self._point_dir[0], -self._point_dir[1])
+			self._angle_deg += 180
+		
 		self._shoot_interval = int(TurretEntity.SECS_PER_SHOT * MAX_FPS *
 									(0.9 + 0.2 * random.random()))
 		self._shot_cooldown = 0
 		self.vulnerable = True
+		
+		# Turret's max shooting angle => min dot product for vector comparison
+		# Turrets inside the asteroid need to be more restrained or they always shoot each other`
+		self._min_shoot_dot_product = 0.1 if outside else 0.28
 		
 	#-------------------------------------------------------------------------------
 	def destroy(self):
@@ -348,7 +378,8 @@ class TurretEntity(Entity):
 								 offset_to_player[1] / dist_to_player)
 				dot_product = self._point_dir[0] * dir_to_player[0] \
 							+ self._point_dir[1] * dir_to_player[1]
-				if dot_product >= 0.1:		# same direction; must be slightly less then 90 degrees
+				# Dot product must be above a threshold to shoot
+				if dot_product >= self._min_shoot_dot_product:
 					# Shoot at the player
 					turret_radius = self.getRadius()
 					turret_centre = self.getCentre()

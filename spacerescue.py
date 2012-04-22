@@ -127,6 +127,7 @@ class App(object):
 				elif event.key == pygame.K_HASH	\
 						or event.key == pygame.K_RETURN and not entity.player.alive:
 					entity.player.reset()
+					entity.mgr.clearBullets()
 				elif event.key == pygame.K_SLASH:
 					entity.Entity.debug_rects = not entity.Entity.debug_rects
 			elif event.type == pygame.KEYUP:
