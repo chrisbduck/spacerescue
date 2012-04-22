@@ -102,9 +102,11 @@ class App(object):
 			if event.type == pygame.KEYDOWN:
 				if event.key in App.ACCEL_DIRS:
 					self._keys_down.add(event.key)
+				elif event.key == pygame.K_SPACE:
+					entity.player.shoot()
 				elif event.key == pygame.K_ESCAPE:
 					return False
-				elif event.key == pygame.K_SPACE:
+				elif event.key == pygame.K_p:
 					self._paused = not self._paused
 				elif event.key == pygame.K_HASH:
 					entity.player.reset()

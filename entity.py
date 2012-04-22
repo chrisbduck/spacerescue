@@ -13,6 +13,7 @@ import pygame
 import random
 
 NUM_TURRETS = 10
+PLAYER_SHOT_SPEED = 10.0
 
 _screen = None
 _renderText = None
@@ -24,6 +25,7 @@ class EntityManager(object):
 		
 	def update(self):
 		[entity.update() for entity in self._entities]
+		self._entities = [entity for entity in self._entities if entity.alive]
 		
 	def render(self, screen):
 		[entity.render(screen) for entity in self._entities]
@@ -40,14 +42,16 @@ class Entity(object):
 	_images = {}
 	
 	def __init__(self, centre_pos, image, name):
-		self._image = Entity.getImage(image)
-		self._rect = self._image.get_rect()
-		self._fpos = [centre_pos[0] - self._rect.width / 2.0,
-					  centre_pos[1] - self._rect.height / 2.0]
-		self._rect.move_ip(self._fpos)
+		if image is not None:
+			self._image = Entity.getImage(image)
+			self._rect = self._image.get_rect()
+			self._fpos = [centre_pos[0] - self._rect.width / 2.0,
+						centre_pos[1] - self._rect.height / 2.0]
+			self._rect.move_ip(self._fpos)
 		self._fvel = [0.0, 0.0]
 		self._angle_deg = None
-		self._alive = True
+		self._name = name
+		self.alive = True
 		mgr.add(self)
 		
 	@staticmethod
@@ -59,6 +63,13 @@ class Entity(object):
 	def getCentre(self):
 		return (self._fpos[0] + self._rect.width / 2.0,
 				self._fpos[1] + self._rect.height / 2.0)
+		
+	def getRadius(self):
+		return self._rect.width / 2.0
+	
+	def setRect(self, x, y, width, height):
+		self._rect = pygame.Rect(x, y, width, height)
+		self._fpos = [float(x), float(y)]
 		
 	def update(self):
 		self._fpos[0] += self._fvel[0]
@@ -84,9 +95,6 @@ class AsteroidEntity(Entity):
 		super(AsteroidEntity, self).__init__(pos, 'data/asteroid', 'asteroid')
 		self._hollow_image = Entity.getImage('data/asteroid-hollow')
 		self._hollow_opacity = 0.0
-		
-	def getRadius(self):
-		return self._rect.width / 2.0
 		
 	def update(self):
 		# Work out how far away the player is from the asteroid centre
@@ -129,6 +137,39 @@ class TurretEntity(Entity):
 		self._angle_deg = angle_deg - 90	# base image is straight up, so rotate 90 degrees CW
 
 #-------------------------------------------------------------------------------
+class BulletEntity(Entity):
+	_count = 0
+	def __init__(self, pos, vel, shot_by_player=True):
+		BulletEntity._count += 1
+		super(BulletEntity, self).__init__(pos, None, 'bullet%d' % BulletEntity._count)
+		vel = [float(vel[0]), float(vel[1])]
+		self._fvel = vel
+		self._shot_by_player = shot_by_player
+		# Set up the rect to be the bounding box of the bullet line.
+		# It will be drawn either top-left to bottom-right, or bottom-left to top-right.
+		self._bl_to_tr = (vel[0] <= 0.0 and vel[1] > 0.0) or (vel[0] > 0.0 and vel[1] <= 0.0)
+		shot_length = 8 if shot_by_player else 3
+		vel_length = math.sqrt(vel[0] * vel[0] + vel[1] * vel[1])
+		shot_offset = (shot_length * vel[0] / vel_length,
+						shot_length * vel[1] / vel_length)
+		other_corner = (pos[0] + shot_offset[0],
+						pos[1] + shot_offset[1])
+		self.setRect(min(pos[0], other_corner[0]), min(pos[1], other_corner[1]),
+					 abs(shot_offset[0]), abs(shot_offset[1]))
+		
+	def update(self):
+		super(BulletEntity, self).update()
+		# Standard easy "remove bullets when off screen" system for now
+		if not self._rect.colliderect(_screen_rect):
+			self.alive = False
+	
+	def render(self, screen):
+		col = (255, 220, 0) if self._shot_by_player else (255, 40, 0)	# yellowish / reddish
+		start_pos = (self._rect.left, self._rect.bottom if self._bl_to_tr else self._rect.top)
+		end_pos = (self._rect.right, self._rect.top if self._bl_to_tr else self._rect.bottom)
+		pygame.draw.line(screen, col, start_pos, end_pos)
+
+#-------------------------------------------------------------------------------
 class PlayerEntity(Entity):
 	_instance = None
 	def __init__(self, pos):
@@ -136,6 +177,7 @@ class PlayerEntity(Entity):
 		PlayerEntity._instance = self
 		super(PlayerEntity, self).__init__(pos, 'data/player-ship', 'player')
 		self._accel_multiplier = 10.0
+		self._angle_deg = 0.0
 		
 	def accelerate(self, amount):
 		self._fvel[0] += amount[0] * self._accel_multiplier
@@ -150,6 +192,16 @@ class PlayerEntity(Entity):
 		self._fpos[0] = (_screen_rect.width - self._rect.width) / 2.0
 		self._fpos[1] = (_screen_rect.height - self._rect.height) / 2.0
 		self._fvel[:] = [0.0, 0.0]
+		
+	def shoot(self):
+		# Start the shot away from the player ship in the angle it's facing
+		x, y = self.getCentre()
+		radius = self.getRadius()
+		angle_rad = self._angle_deg * math.pi / 180
+		dx = math.cos(angle_rad)
+		dy = -math.sin(angle_rad)
+		BulletEntity((x + dx * radius, y + dy * radius),
+					 (dx * PLAYER_SHOT_SPEED, dy * PLAYER_SHOT_SPEED), shot_by_player=True)
 		
 #-------------------------------------------------------------------------------
 def init(screen, screen_rect, renderText):
