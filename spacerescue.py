@@ -10,6 +10,7 @@
 
 from common import *
 import math
+import misc
 import os
 import pygame
 import random
@@ -26,8 +27,6 @@ import entity
 
 #-------------------------------------------------------------------------------
 class App(object):
-	
-	CENTRE = -1			# constant for text centring
 	
 	UP_LEFT =		(-1, -1)
 	UP = 			( 0, -1)
@@ -67,9 +66,9 @@ class App(object):
 												pygame.DOUBLEBUF | pygame.HWSURFACE)
 		self._next_frame_tick = 0
 		self._paused = False
-		self._font = pygame.font.Font(pygame.font.get_default_font(), 16)
 		self._keys_down = set()
-		entity.init(self._screen, self._screen_rect, self.renderText)
+		entity.init(self._screen, self._screen_rect)
+		misc.init(self._screen, self._screen_rect)
 		
 	#-------------------------------------------------------------------------------
 	def run(self):
@@ -147,25 +146,12 @@ class App(object):
 		
 	#-------------------------------------------------------------------------------
 	def renderAllText(self):
-		self.renderText("Paused" if self._paused else "Running",
-						pos=(App.CENTRE, 5), col=(220, 220, 220))
-		self.renderText("Player is at (%d, %d)" %
+		misc.renderText("Player is at (%d, %d)" %
 						(entity.player._rect.left, entity.player._rect.top),
-						pos=(App.CENTRE, 25), col=(128, 128, 128))
-		
-	#-------------------------------------------------------------------------------
-	def renderText(self, text, pos, col):
-		text_surface = self._font.render(text, True, col)
-		rect = text_surface.get_rect()
-		if pos[0] == App.CENTRE:
-			rect.left += (self._screen_rect.width - rect.width) / 2
-		else:
-			rect.left += pos[0]
-		if pos[1] == App.CENTRE:
-			rect.top += (self._screen_rect.height - rect.height) / 2
-		else:
-			rect.top += pos[1]
-		self._screen.blit(text_surface, rect)
+						pos=(0, 0), col=(128, 128, 128))
+		misc.renderText("Paused" if self._paused else "Running",
+						pos=(0, 40), col=(220, 220, 220))
+		misc.renderText("Score: %d" % misc.score, pos=(misc.CENTRE, 0), col=(255, 255, 40))
 
 #-------------------------------------------------------------------------------
 

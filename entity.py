@@ -10,11 +10,11 @@
 
 from common import *
 import math
+import misc
 import pygame
 import random
 
 _screen = None
-_renderText = None
 
 #-------------------------------------------------------------------------------
 class EntityManager(object):
@@ -46,6 +46,8 @@ class EntityManager(object):
 			collided_with = b._rect.collidelist(vulnerable_rects)
 			if collided_with >= 0:
 				print vulnerables[collided_with].name, 'was shot by', b.name	# (bullet name)
+				if b._shot_by_player:
+					misc.score += 1
 				b.destroy()
 				vulnerables[collided_with].destroy()
 		# Collide vulnerables with other vulnerables
@@ -160,8 +162,8 @@ class AsteroidEntity(Entity):
 		if self._hollow_opacity > 0.0:
 			self._hollow_image.set_alpha(self._hollow_opacity * 255)
 			screen.blit(self._hollow_image, self._rect)
-		_renderText('Hollow asteroid alpha: %d%%' % (self._hollow_opacity * 100),
-					(0, 0), (255, 255, 255))
+		misc.renderText('Hollow asteroid alpha: %d%%' % (self._hollow_opacity * 100),
+						(0, 20), (255, 255, 255))
 
 #-------------------------------------------------------------------------------
 class TurretEntity(Entity):
@@ -298,11 +300,10 @@ class PlayerEntity(Entity):
 					 (dx * PLAYER_SHOT_SPEED, dy * PLAYER_SHOT_SPEED), shot_by_player=True)
 		
 #-------------------------------------------------------------------------------
-def init(screen, screen_rect, renderText):
-	global _screen, _screen_rect, _renderText
+def init(screen, screen_rect):
+	global _screen, _screen_rect
 	_screen = screen
 	_screen_rect = screen_rect
-	_renderText = renderText
 
 #-------------------------------------------------------------------------------
 def generateTurrets():
