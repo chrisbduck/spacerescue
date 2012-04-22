@@ -14,6 +14,10 @@ import misc
 import pygame
 import random
 
+TWO_PI = 2 * math.pi
+DEG_TO_RAD = math.pi / 180
+RAD_TO_DEG = 180 / math.pi
+
 _screen = None
 
 #-------------------------------------------------------------------------------
@@ -90,9 +94,37 @@ class EntityManager(object):
 			# Collision if offset distance < asteroid outer radius + entity
 			if entity_outer_dist > asteroid_inner_radius \
 					and entity_inner_dist < asteroid_outer_radius:
-				# TO DO: Check the offset angle to see if the entity went through the entrance
-				print entity.name, 'ran into', asteroid.name
-				entity.destroy()
+				# Check the offset angles to see if the entity went through the entrance
+				in_entrance = False
+				offset_dir = (offset[0] / offset_dist, offset[1] / offset_dist)
+				offset_angle_rad = math.atan2(offset_dir[1], offset_dir[0])
+				if offset_angle_rad < 0:
+					offset_angle_rad += TWO_PI
+				safe_min_angle_rad = 170 * DEG_TO_RAD
+				safe_max_angle_rad = 190 * DEG_TO_RAD
+				if offset_angle_rad > safe_min_angle_rad and offset_angle_rad < safe_max_angle_rad:
+					# The angle to the ship centre was in the safe range.  Now check its extents
+					offset_tangent_angle_rad = offset_angle_rad + math.pi / 2
+					tangent_cos = math.cos(offset_tangent_angle_rad)
+					tangent_sin = math.sin(offset_tangent_angle_rad)
+					tangent_dir = (offset_dir[0] * tangent_cos - offset_dir[1] * tangent_sin,
+								   offset_dir[0] * tangent_sin + offset_dir[1] * tangent_cos)
+					tangent = (tangent_dir[0] * entity_radius, tangent_dir[1] * entity_radius)
+					extent1 = (offset[0] + tangent[0], offset[1] + tangent[1])
+					extent2 = (offset[0] - tangent[0], offset[1] - tangent[1])
+					extent1_angle_rad = math.atan2(extent1[1], extent1[0])
+					if extent1_angle_rad < 0:
+						extent1_angle_rad += TWO_PI
+					extent2_angle_rad = math.atan2(extent2[1], extent2[0])
+					if extent2_angle_rad < 0:
+						extent2_angle_rad += TWO_PI
+					if min(extent1_angle_rad, extent2_angle_rad) > safe_min_angle_rad \
+							and max(extent1_angle_rad, extent2_angle_rad) < safe_max_angle_rad:
+						in_entrance = True
+				
+				if not in_entrance:
+					print entity.name, 'hit', asteroid.name
+					entity.destroy()
 
 #-------------------------------------------------------------------------------
 class Entity(object):
@@ -209,7 +241,7 @@ class TurretEntity(Entity):
 	
 	def __init__(self, asteroid, angle_deg):
 		TurretEntity._count += 1
-		angle_rad = angle_deg * math.pi / 180
+		angle_rad = angle_deg * DEG_TO_RAD
 		radius = asteroid.getRadius()
 		radius += 4 	# slight fudge factor :) - half of turret pixel radius
 		pos = list(asteroid.getCentre())
@@ -312,7 +344,7 @@ class PlayerEntity(Entity):
 		if amount[1] == 0.0:
 			self._angle_deg = 0 if amount[0] > 0.0 else 180
 		else:
-			self._angle_deg = math.atan2(-amount[1], amount[0]) * 180 / math.pi
+			self._angle_deg = math.atan2(-amount[1], amount[0]) * RAD_TO_DEG
 		
 	def reset(self):
 		global _screen_rect
@@ -327,7 +359,7 @@ class PlayerEntity(Entity):
 		# Start the shot away from the player ship in the angle it's facing
 		x, y = self.getCentre()
 		radius = self.getRadius()
-		angle_rad = self._angle_deg * math.pi / 180
+		angle_rad = self._angle_deg * DEG_TO_RAD
 		dx = math.cos(angle_rad)
 		dy = -math.sin(angle_rad)
 		BulletEntity((x + dx * radius, y + dy * radius),
