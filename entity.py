@@ -349,10 +349,11 @@ class TurretEntity(Entity):
 									(0.9 + 0.2 * random.random()))
 		self._shot_cooldown = 0
 		self.vulnerable = True
+		self._outside = outside
 		
 		# Turret's max shooting angle => min dot product for vector comparison
 		# Turrets inside the asteroid need to be more restrained or they always shoot each other`
-		self._min_shoot_dot_product = 0.1 if outside else 0.28
+		self._min_shoot_dot_product = 0.1 if outside else 0.4
 		
 	#-------------------------------------------------------------------------------
 	def destroy(self):
@@ -362,6 +363,9 @@ class TurretEntity(Entity):
 	#-------------------------------------------------------------------------------
 	def update(self):
 		super(TurretEntity, self).update()
+		# Don't update the inside turrets unless the asteroid is in its hollow state
+		if not self._outside and asteroid._hollow_opacity < 1:
+			return
 		# Wind down the shooting timer if needed
 		if self._shot_cooldown > 0:
 			self._shot_cooldown -= 1
@@ -390,6 +394,12 @@ class TurretEntity(Entity):
 								shot_by_player=False, shot_by_name=self.name)
 					Entity.playRandomSound(TurretEntity._shoot_sounds)
 					self._shot_cooldown = self._shoot_interval
+		
+	def render(self, screen):
+		# Don't render the inside turrets unless the asteroid is in its hollow state
+		if not self._outside and asteroid._hollow_opacity < 1:
+			return
+		super(TurretEntity, self).render(screen)
 
 #-------------------------------------------------------------------------------
 class BulletEntity(Entity):
