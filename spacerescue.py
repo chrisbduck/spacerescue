@@ -82,8 +82,8 @@ class App(object):
 					return
 			self._return_to_menu = False
 			
-			entity.mgr.generate()
 			misc.reset()
+			entity.mgr.generate()
 			misc.startMusic(misc.IN_GAME_MUSIC)
 			
 			while True:
@@ -124,10 +124,13 @@ class App(object):
 					return False
 				elif event.key == pygame.K_p:
 					self._paused = not self._paused
-				elif event.key == pygame.K_HASH	\
-						or event.key == pygame.K_RETURN and not entity.player.alive:
+				elif event.key == pygame.K_HASH:
 					entity.player.reset()
-					entity.mgr.clearBullets()
+					misc.score -= 2
+				elif event.key == pygame.K_RETURN:
+					if not entity.player.alive:
+						entity.player.reset()
+						entity.mgr.clearBullets()
 				elif event.key == pygame.K_SLASH:
 					entity.Entity.debug_rects = not entity.Entity.debug_rects
 			elif event.type == pygame.KEYUP:
@@ -170,11 +173,14 @@ class App(object):
 		misc.renderText("Player is at (%d, %d)" %
 						(entity.player._rect.left, entity.player._rect.top),
 						pos=(0, 0), col=(128, 128, 128))
-		misc.renderText("Paused" if self._paused else "Running",
-						pos=(0, 40), col=(220, 220, 220))
-		misc.renderText("Score: %d" % misc.score, pos=(-10, 0), col=(255, 255, 40))
-		misc.renderText("Deaths: %d" % misc.deaths, pos=(-10, 20), col=(255, 80, 40))
-		misc.renderText("Rescued: %d" % misc.rescued, pos=(-10, 40), col=(96, 255, 96))
+		if self._paused:
+			misc.renderText("Paused", pos=(0, 40), col=(220, 220, 220))
+		if entity.level_up_countdown is not None:
+			misc.renderText("Level Complete!", pos=(misc.CENTRE, 0), col=(140, 255, 140))
+		misc.renderText("Level: %d" % (misc.level + 1), pos=(-10, 0), col=(255, 255, 255))
+		misc.renderText("Score: %d" % misc.score, pos=(-10, 20), col=(255, 255, 40))
+		misc.renderText("Deaths: %d" % misc.deaths, pos=(-10, 40), col=(255, 80, 40))
+		misc.renderText("Rescued: %d" % misc.rescued, pos=(-10, 60), col=(96, 255, 96))
 
 #-------------------------------------------------------------------------------
 

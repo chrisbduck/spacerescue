@@ -21,8 +21,11 @@ RAD_TO_DEG = 180 / math.pi
 DEATH_SCORE_PENALTY = 5
 RESCUE_SCORE = 3
 PLAYER_INITIAL_POS = (30.0, 300.0)
+LEVEL_UP_DISPLAY_SEC = 4
 
 _screen = None
+_screen_rect = None
+level_up_countdown = None
 
 #-------------------------------------------------------------------------------
 class EntityManager(object):
@@ -75,11 +78,12 @@ class EntityManager(object):
 	def _generatePlacements(self):
 		"Generates placed entities: turrets and spacemen."
 		# Determine placements
-		outside_turret_angles = self._generatePlacementAngles(NUM_TURRETS,
+		outside_turret_angles = self._generatePlacementAngles(misc.num_turrets,
 															  place_around_entrance=True)
-		inside_turret_angles = self._generatePlacementAngles(NUM_TURRETS,
+		inside_turret_angles = self._generatePlacementAngles(misc.num_turrets,
 															 place_around_entrance=True)
-		spaceman_angles = self._generatePlacementAngles(NUM_SPACEMEN, place_around_entrance=False,
+		spaceman_angles = self._generatePlacementAngles(misc.num_spacemen,
+														place_around_entrance=False,
 														avoid_angles=inside_turret_angles)
 		
 		# Construct
@@ -93,6 +97,8 @@ class EntityManager(object):
 		[entity.update() for entity in self._entities]
 		# Collide
 		self.testForCollisions()
+		# Level logic
+		self.updateLevel()
 		# Remove dead stuff
 		self._entities = [entity for entity in self._entities if entity.alive]
 		
@@ -105,6 +111,29 @@ class EntityManager(object):
 		self._entities.append(entity)
 		
 	#-------------------------------------------------------------------------------
+	def updateLevel(self):
+		# Check for level finish
+		global level_up_countdown
+		if level_up_countdown is None:
+			# Check for level completion
+			if not any((isinstance(entity, SpacemanEntity) for entity in self._entities)) \
+					and asteroid._hollow_opacity < 0.5:
+				# Level up (start timer)
+				level_up_sound = Entity.getSound('data/sfx/Powerup2')
+				level_up_sound.play()
+				level_up_countdown = LEVEL_UP_DISPLAY_SEC * MAX_FPS
+		else:
+			# Check for display completion & actual level change
+			level_up_countdown -= 1
+			if level_up_countdown <= 0:
+				new_level_sound = Entity.getSound('data/sfx/Powerup1')
+				new_level_sound.play()
+				level_up_countdown = None
+				misc.setLevel(misc.level + 1)
+				self.clear()
+				self.generate()
+		
+	#-------------------------------------------------------------------------------
 	def testForCollisions(self):
 		bullets = [entity for entity in self._entities if isinstance(entity, BulletEntity)]
 		vulnerables = [entity for entity in self._entities if entity.vulnerable]
@@ -113,13 +142,19 @@ class EntityManager(object):
 		
 		# Collide bullets with vulnerables
 		for b in bullets:
-			collided_with = b._rect.collidelist(vulnerable_rects)
-			if collided_with >= 0:
-				print vulnerables[collided_with].name, 'was shot by', b.name	# (bullet name)
+			collided_with_index = b._rect.collidelist(vulnerable_rects)
+			if collided_with_index >= 0:
+				collided_with = vulnerables[collided_with_index]
+				print collided_with.name, 'was shot by', b.name	# (bullet name)
 				if b._shot_by_player:
-					misc.score += 1
+					# Lose points for shooting spacemen; gain points for shooting anything else
+					# that's vulnerable
+					if isinstance(collided_with, SpacemanEntity):
+						misc.score -= 1
+					else:
+						misc.score += 1
 				b.destroy()
-				vulnerables[collided_with].destroy()
+				collided_with.destroy()
 		
 		# Collide vulnerables with other vulnerables
 		for v in (player,):		# was vulnerables; avoiding turret-turret collisions for now
@@ -412,8 +447,8 @@ class TurretEntity(Entity):
 					turret_centre = self.getCentre()
 					BulletEntity((turret_centre[0] + dir_to_player[0] * shot_start_distance,
 								turret_centre[1] + dir_to_player[1] * shot_start_distance),
-								(dir_to_player[0] * TURRET_SHOT_SPEED,
-								dir_to_player[1] * TURRET_SHOT_SPEED),
+								(dir_to_player[0] * misc.turret_shot_speed,
+								dir_to_player[1] * misc.turret_shot_speed),
 								shot_by_player=False, shot_by_name=self.name)
 					Entity.playRandomSound(TurretEntity._shoot_sounds)
 					self._shot_cooldown = self._shoot_interval
@@ -553,7 +588,8 @@ class PlayerEntity(Entity):
 		dx = math.cos(angle_rad)
 		dy = -math.sin(angle_rad)
 		BulletEntity((x + dx * radius, y + dy * radius),
-					 (dx * PLAYER_SHOT_SPEED, dy * PLAYER_SHOT_SPEED), shot_by_player=True)
+					 (dx * misc.player_shot_speed, dy * misc.player_shot_speed),
+					 shot_by_player=True)
 		self._shoot_sound.play()
 		
 	#-------------------------------------------------------------------------------

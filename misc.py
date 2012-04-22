@@ -15,9 +15,26 @@ CENTRE = -1			# constant for text centring
 IN_GAME_MUSIC = 0
 MENU_MUSIC = 1
 
+# turrets, spacemen, and turret shot speed for each level
+LEVEL_DATA = [
+	[7, 7, 1.0],
+	[10, 10, 1.5],
+	[12, 12, 2.0],
+	[14, 14, 3.0],
+	[20, 20, 4.5],
+	[20, 20, 7.0],
+	[20, 20, 10.0]
+]
+
+num_turrets = None
+num_spacemen = None
+turret_shot_speed = None
+player_shot_speed = 10.0
+
 score = 0
 deaths = 0
 rescued = 0
+level = 0
 _default_font = None
 _screen = None
 _screen_rect = None
@@ -28,6 +45,17 @@ def init(screen, screen_rect):
 	_screen = screen
 	_screen_rect = screen_rect
 	_default_font = getFont(16)
+
+#-------------------------------------------------------------------------------
+def setLevel(new_level):
+	"Sets the game level (0-based)."
+	global level, num_turrets, num_spacemen, turret_shot_speed
+	print 'Starting level', new_level
+	level = new_level		# ignore clamping for the display
+	level_data = LEVEL_DATA[max(0, min(new_level, len(LEVEL_DATA) - 1))]	# clamp		
+	num_turrets = level_data[0]
+	num_spacemen = level_data[1]
+	turret_shot_speed = level_data[2]
 
 #-------------------------------------------------------------------------------
 def getFont(pixel_size):
@@ -78,5 +106,6 @@ def reset():
 	score = 0
 	deaths = 0
 	rescued = 0
+	setLevel(0)
 
 #-------------------------------------------------------------------------------
