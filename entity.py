@@ -19,6 +19,7 @@ DEG_TO_RAD = math.pi / 180
 RAD_TO_DEG = 180 / math.pi
 
 DEATH_SCORE_PENALTY = 5
+RESCUE_SCORE = 3
 PLAYER_INITIAL_POS = (30.0, 300.0)
 
 _screen = None
@@ -131,11 +132,17 @@ class EntityManager(object):
 					vuln_rects_test = vuln_rects_test[:v2_index] + vuln_rects_test[v2_index + 1:]
 					break
 			
-			collided_with = v._rect.collidelist(vuln_rects_test)
-			if collided_with > 0:
-				print v.name, 'ran into', vulnerables[collided_with].name
-				v.destroy()
-				vulnerables[collided_with].destroy()
+			collided_with_index = v._rect.collidelist(vuln_rects_test)
+			if collided_with_index > 0:
+				collided_with = vulnerables[collided_with_index]
+				# If it's a spaceman, they get rescued; otherwise, the player dies
+				if v is player and isinstance(collided_with, SpacemanEntity):
+					print 'player rescued', collided_with.name
+					collided_with.rescue()
+				else:
+					print v.name, 'ran into', collided_with.name
+					v.destroy()
+					collided_with.destroy()
 		
 		# Collide the player and all bullets with the asteroid surface
 		# Easiest way is intersecting two spheres with the entity's rect
@@ -401,10 +408,10 @@ class TurretEntity(Entity):
 				# Dot product must be above a threshold to shoot
 				if dot_product >= self._min_shoot_dot_product:
 					# Shoot at the player
-					turret_radius = self.getRadius()
+					shot_start_distance = self.getRadius() + 2
 					turret_centre = self.getCentre()
-					BulletEntity((turret_centre[0] + dir_to_player[0] * turret_radius,
-								turret_centre[1] + dir_to_player[1] * turret_radius),
+					BulletEntity((turret_centre[0] + dir_to_player[0] * shot_start_distance,
+								turret_centre[1] + dir_to_player[1] * shot_start_distance),
 								(dir_to_player[0] * TURRET_SHOT_SPEED,
 								dir_to_player[1] * TURRET_SHOT_SPEED),
 								shot_by_player=False, shot_by_name=self.name)
@@ -464,6 +471,7 @@ class BulletEntity(Entity):
 #-------------------------------------------------------------------------------
 class SpacemanEntity(Entity):
 	_count = 0
+	_rescue_sound = Entity.getSound('data/sfx/Pickup_Coin20')
 	
 	#-------------------------------------------------------------------------------
 	def __init__(self, asteroid, angle_deg):
@@ -478,10 +486,16 @@ class SpacemanEntity(Entity):
 		super(SpacemanEntity, self).__init__(pos, 'data/spaceman',
 			'spaceman%d' % SpacemanEntity._count)
 		
-		# Match the turret orientation to its angle from the asteroid centre
+		# Match the spaceman's orientation to their angle from the asteroid centre
 		self._angle_deg = angle_deg - 90	# base image is straight up, so rotate 90 degrees CW
 		self._angle_deg += 180				# put on the inside of the asteroid
 		self.vulnerable = True
+		
+	def rescue(self):
+		misc.rescued += 1
+		misc.score += RESCUE_SCORE
+		SpacemanEntity._rescue_sound.play()
+		self.alive = False
 		
 	def render(self, screen):
 		if not asteroid._is_hollow:

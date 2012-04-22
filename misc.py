@@ -17,6 +17,7 @@ MENU_MUSIC = 1
 
 score = 0
 deaths = 0
+rescued = 0
 _default_font = None
 _screen = None
 _screen_rect = None
@@ -50,6 +51,8 @@ def renderText(text, pos, col, font=None):
 	rect = text_surface.get_rect()
 	if pos[0] == CENTRE:
 		rect.left += (_screen_rect.width - rect.width) / 2
+	elif pos[0] < 0:
+		rect.right = _screen_rect.width + pos[0]	# right justify
 	else:
 		rect.left += pos[0]
 	if pos[1] == CENTRE:
@@ -71,8 +74,9 @@ def startMusic(music_id):
 
 #-------------------------------------------------------------------------------
 def reset():
-	global score, deaths
+	global score, deaths, rescued
 	score = 0
 	deaths = 0
+	rescued = 0
 
 #-------------------------------------------------------------------------------

@@ -172,8 +172,9 @@ class App(object):
 						pos=(0, 0), col=(128, 128, 128))
 		misc.renderText("Paused" if self._paused else "Running",
 						pos=(0, 40), col=(220, 220, 220))
-		text = "Score: %d  Deaths: %d" % (misc.score, misc.deaths)
-		misc.renderText(text, pos=(misc.CENTRE, 0), col=(255, 255, 40))
+		misc.renderText("Score: %d" % misc.score, pos=(-10, 0), col=(255, 255, 40))
+		misc.renderText("Deaths: %d" % misc.deaths, pos=(-10, 20), col=(255, 80, 40))
+		misc.renderText("Rescued: %d" % misc.rescued, pos=(-10, 40), col=(96, 255, 96))
 
 #-------------------------------------------------------------------------------
 
