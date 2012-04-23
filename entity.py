@@ -249,7 +249,7 @@ class Entity(object):
 						centre_pos[1] - self._rect.height / 2.0]
 			self._rect.move_ip(self._fpos)
 		self._fvel = [0.0, 0.0]
-		self._angle_deg = None
+		self._angle_deg = 0.0
 		self.name = name
 		self.vulnerable = False		# can be shot
 		self.alive = True
@@ -308,7 +308,7 @@ class Entity(object):
 	
 	#-------------------------------------------------------------------------------
 	def render(self, screen):
-		if self._angle_deg is not None:
+		if self._angle_deg != 0.0:
 			# Rotated render
 			rotated = pygame.transform.rotate(self._image, self._angle_deg)
 			rotated_rect = rotated.get_rect()
@@ -563,7 +563,7 @@ class PlayerEntity(Entity):
 		self._fvel[0] += amount[0] * self._accel_multiplier
 		self._fvel[1] += amount[1] * self._accel_multiplier
 		if amount[1] == 0.0:
-			self._angle_deg = 0 if amount[0] > 0.0 else 180
+			self._angle_deg = 0.0 if amount[0] > 0.0 else 180.0
 		else:
 			self._angle_deg = math.atan2(-amount[1], amount[0]) * RAD_TO_DEG
 		# Assume this was the player's thruster input (may need to change this later)
@@ -580,7 +580,7 @@ class PlayerEntity(Entity):
 		global _screen_rect
 		self._fpos = PlayerEntity.generateStartPos()
 		self._fvel[:] = [0.0, 0.0]
-		self._angle_deg = None
+		self._angle_deg = 0.0
 		if not self.alive:
 			self.alive = True
 			mgr.add(self)
