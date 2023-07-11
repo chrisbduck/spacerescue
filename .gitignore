@@ -1,3 +1,7 @@
 *.pyc
 build
 dist
+linux-dist
+windows-dist
+*.tgz
+*.lnk
